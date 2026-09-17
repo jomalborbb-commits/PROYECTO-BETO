@@ -1,0 +1,986 @@
+/* =========================================================
+   TOKENS
+   ========================================================= */
+:root {
+  --bg: #EAE3D4;
+  --surface: #FFFFFF;
+  --surface-2: #F6F2E8;
+  --ink: #23201B;
+  --ink-soft: #5C564A;
+  --line: #D7CDB8;
+  --line-strong: #C2B79E;
+
+  --brick: #B23E28;
+  --brick-dark: #8C2F1E;
+  --brick-tint: #F3DCD3;
+
+  --moss: #47624B;
+  --moss-tint: #E1EAE0;
+
+  --amber: #B3801F;
+  --amber-tint: #F3E7CC;
+
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --shadow-card: 0 1px 2px rgba(35,32,27,0.06), 0 6px 16px rgba(35,32,27,0.07);
+}
+
+* { box-sizing: border-box; }
+
+/* GLOBAL Y CRÍTICO: garantiza que cualquier elemento con el atributo
+   "hidden" quede realmente oculto, sin importar si otra regla de esta
+   hoja de estilos le puso "display: flex/grid/inline-flex". Sin esto,
+   el mismo bug (elementos "ocultos" que igual se ven) puede repetirse
+   en botones, menús o modales nuevos que se agreguen más adelante. */
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='42' viewBox='0 0 84 42'%3E%3Crect width='84' height='42' fill='%23EAE3D4'/%3E%3Cg fill='%23E1D6BE' stroke='%23D3C7AB' stroke-width='1'%3E%3Crect x='1' y='1' width='39' height='19'/%3E%3Crect x='43' y='1' width='39' height='19'/%3E%3Crect x='-19' y='22' width='39' height='19'/%3E%3Crect x='22' y='22' width='39' height='19'/%3E%3Crect x='64' y='22' width='39' height='19'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* Franja decorativa tipo "hilada de ladrillos" bajo el encabezado */
+.app::before {
+  content: "";
+  display: block;
+  height: 7px;
+  margin: -28px -32px 22px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--brick) 0px, var(--brick) 26px,
+    var(--brick-dark) 26px, var(--brick-dark) 27px,
+    var(--brick) 27px, var(--brick) 53px,
+    var(--brick-dark) 53px, var(--brick-dark) 54px
+  );
+  opacity: 0.85;
+}
+
+@media (max-width: 900px) {
+  .app::before { margin: -18px -18px 18px; }
+}
+
+.app {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 28px 32px 60px;
+}
+
+/* =========================================================
+   ENCABEZADO
+   ========================================================= */
+.topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 22px;
+}
+
+.topbar-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.brand-mark {
+  color: var(--brick);
+  font-size: 22px;
+  line-height: 1.2;
+  transform: rotate(15deg);
+  display: inline-block;
+}
+
+.topbar-title h1 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0 0 2px;
+  letter-spacing: -0.01em;
+}
+
+.topbar-title p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.brand-illustration {
+  flex-shrink: 0;
+  width: 118px;
+  height: 94px;
+  margin: 0 16px;
+}
+
+.brand-illustration svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .brand-illustration { display: none; }
+}
+
+/* =========================================================
+   BOTONES
+   ========================================================= */
+.btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 9px 16px;
+  border-radius: var(--radius-s);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: transform 0.08s ease, background-color 0.15s ease, border-color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.btn:active { transform: translateY(1px); }
+
+.btn-primary {
+  background: var(--brick);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--brick-dark); }
+
+.btn-accent {
+  background: var(--ink);
+  color: #fff;
+}
+.btn-accent:hover { background: #34302a; }
+
+.btn-danger {
+  background: var(--brick-dark);
+  color: #fff;
+}
+.btn-danger:hover { background: #6e2417; }
+
+.btn-outline {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+.btn-outline:hover { border-color: var(--ink); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-soft);
+  border-color: transparent;
+}
+.btn-ghost:hover { color: var(--ink); background: var(--surface-2); }
+
+/* =========================================================
+   PESTAÑAS DE MES
+   ========================================================= */
+.month-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 20px;
+}
+
+.month-tab {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: var(--radius-s) var(--radius-s) 0 0;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.month-tab:hover { color: var(--ink); }
+
+.month-tab.active {
+  color: var(--brick);
+  border-bottom-color: var(--brick);
+  background: var(--surface);
+}
+
+/* =========================================================
+   ESTADÍSTICAS
+   ========================================================= */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-card);
+}
+
+.stat-card .stat-label {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin: 0 0 6px;
+  text-transform: none;
+}
+
+.stat-card .stat-value {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.stat-card.debt .stat-value { color: var(--amber); }
+.stat-card.total .stat-value { color: var(--moss); }
+
+.stat-variation {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+.stat-variation-up { color: var(--moss); }
+.stat-variation-down { color: var(--brick-dark); }
+.stat-variation-neutral { color: var(--ink-soft); font-weight: 500; font-style: italic; }
+
+/* =========================================================
+   BARRA DE ACCIONES
+   ========================================================= */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.toolbar-spacer { flex: 1; }
+
+/* --- Menú desplegable "Más acciones" --- */
+.dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  box-shadow: 0 10px 30px rgba(35,32,27,0.15);
+  min-width: 230px;
+  padding: 6px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* CRÍTICO: sin esta regla, "display: flex" de arriba anula el atributo
+   hidden y el menú queda visible todo el tiempo, sin importar el clic. */
+.dropdown-menu[hidden] {
+  display: none !important;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-s);
+  padding: 9px 10px;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background: var(--surface-2);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 5px 4px;
+}
+
+.dropdown-item-danger {
+  color: var(--brick-dark);
+}
+
+.dropdown-item-danger:hover {
+  background: var(--brick-tint);
+}
+
+/* =========================================================
+   TABLA
+   ========================================================= */
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  overflow: auto;
+  box-shadow: var(--shadow-card);
+  max-height: 62vh;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12.5px;
+  min-width: 1600px;
+}
+
+#tablaRegistros thead th {
+  position: sticky;
+  top: 0;
+  background: var(--ink);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 12px;
+  white-space: nowrap;
+  z-index: 2;
+}
+
+tbody td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+tbody tr:hover { background: var(--surface-2); }
+
+td.num, th.num { text-align: right; }
+
+td.mono { font-family: var(--font-mono); font-size: 12px; }
+
+td.debt-positive { color: var(--brick-dark); font-weight: 600; }
+td.debt-zero { color: var(--moss); }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge-adelanto { background: var(--amber-tint); color: var(--amber); }
+.badge-contado { background: var(--moss-tint); color: var(--moss); }
+
+.row-actions { display: flex; gap: 6px; }
+.icon-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 6px;
+  border-radius: var(--radius-s);
+  color: var(--ink-soft);
+}
+.icon-btn:hover { background: var(--surface-2); color: var(--ink); }
+.icon-btn.danger:hover { color: var(--brick); }
+
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+/* =========================================================
+   MODALES
+   ========================================================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(35, 32, 27, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+
+/* CRÍTICO: esta regla debe existir para que el atributo hidden funcione.
+   Sin ella, "display: flex" de arriba anula el hidden y las modales
+   quedan visibles y superpuestas todo el tiempo. */
+.modal-overlay[hidden] {
+  display: none !important;
+}
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius-m);
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  overflow: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+
+.modal-small { max-width: 420px; }
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+}
+
+.modal-header h2 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  margin: 0;
+}
+
+.modal-close {
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+.modal-close:hover { color: var(--ink); }
+
+.modal-body { padding: 22px; }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+}
+
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.form-grid label small {
+  font-weight: 400;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.form-grid input,
+.form-grid select,
+.form-grid textarea {
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  padding: 9px 10px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+}
+
+.form-grid input:focus,
+.form-grid select:focus,
+.form-grid textarea:focus {
+  outline: 2px solid var(--brick);
+  outline-offset: 1px;
+  border-color: var(--brick);
+}
+
+.span-2 { grid-column: span 2; }
+
+/* --- Secciones del formulario (fieldset/legend) --- */
+.form-section {
+  grid-column: span 2;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-m);
+  padding: 16px 18px 18px;
+  margin: 0;
+}
+
+.form-section legend {
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--brick);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0 6px;
+}
+
+.form-section-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+}
+
+.req { color: var(--brick); }
+
+/* --- Indicador de estado formal (Excel automático / Carpeta de facturas) --- */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  border: 1.5px solid var(--brick);
+  color: var(--brick-dark);
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brick);
+  flex-shrink: 0;
+}
+
+.status-badge.activo {
+  border-color: var(--moss);
+  color: var(--moss);
+}
+
+.status-badge.activo .status-dot {
+  background: var(--moss);
+  box-shadow: 0 0 0 3px var(--moss-tint);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.modal-footer-stack {
+  flex-direction: column;
+}
+.modal-footer-stack .btn { width: 100%; justify-content: center; }
+
+/* --- Modal de advertencia (Borrar todos los datos) --- */
+.modal-danger {
+  border-top: 4px solid var(--brick-dark);
+}
+
+.modal-danger-body {
+  text-align: center;
+  padding: 28px 26px 24px;
+}
+
+.modal-danger-icon {
+  font-size: 34px;
+  margin-bottom: 10px;
+}
+
+.modal-danger-title {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: var(--brick-dark);
+}
+
+.modal-danger-text {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.modal-danger-tip {
+  margin: 0 0 18px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  background: var(--surface-2);
+  border-radius: var(--radius-s);
+  padding: 8px 12px;
+}
+
+/* =========================================================
+   TOASTS
+   ========================================================= */
+.toast-container {
+  position: fixed;
+  bottom: 22px;
+  right: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 200;
+}
+
+.toast {
+  background: var(--ink);
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: var(--radius-s);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow-card);
+  animation: slideIn 0.2s ease;
+}
+
+.toast.success { background: var(--moss); }
+.toast.error { background: var(--brick-dark); }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================================
+   ANÁLISIS ESTRATÉGICO Y OPERATIVO (2 gráficas detalladas)
+   ========================================================= */
+
+.charts-section {
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 2px solid var(--line);
+}
+
+.charts-title {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.charts-subtitle {
+  margin: 0 0 16px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.chart-detail-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 16px;
+}
+
+.chart-detail-card h3 {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: var(--ink);
+}
+
+.chart-detail-purpose {
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.chart-detail-grid {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.chart-detail-visual {
+  position: relative;
+  height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FDF1E4;
+  border-radius: var(--radius-s);
+}
+
+.chart-detail-table-wrap {
+  overflow-x: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.chart-detail-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+}
+
+.chart-detail-table th {
+  text-align: left;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--brick-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: 8px 8px;
+  background: #FBE4CC;
+  border-bottom: 2px solid var(--line);
+  white-space: nowrap;
+}
+
+.chart-detail-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.chart-detail-table th.num, .chart-detail-table td.num {
+  text-align: right;
+}
+
+.chart-detail-table td.up { color: var(--moss); font-weight: 600; }
+.chart-detail-table td.down { color: var(--brick-dark); font-weight: 600; }
+.chart-detail-table td.neutral { color: var(--ink-soft); font-style: italic; }
+
+.chart-detail-empty-row td {
+  text-align: center;
+  color: var(--ink-soft);
+  font-style: italic;
+  padding: 20px 8px;
+}
+
+.chart-detail-footnote {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+@media (max-width: 900px) {
+  .chart-detail-grid { grid-template-columns: 1fr; }
+  .chart-detail-visual { height: 220px; }
+}
+
+/* Gráfica 2: dona más grande y protagonista */
+.chart-detail-grid-donut {
+  grid-template-columns: 1.15fr 0.85fr;
+}
+
+.chart-detail-visual-donut {
+  height: 340px;
+}
+
+@media (max-width: 900px) {
+  .chart-detail-grid-donut { grid-template-columns: 1fr; }
+  .chart-detail-visual-donut { height: 280px; }
+}
+
+/* =========================================================
+   INDICADORES CLAVE
+   ========================================================= */
+
+.kpi-section {
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 2px solid var(--line);
+}
+
+.kpi-title {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.kpi-subtitle {
+  margin: 0 0 16px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kpi-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kpi-icon { font-size: 18px; }
+
+.kpi-card-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.kpi-value {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  margin: 2px 0 0;
+  line-height: 1.1;
+}
+
+.kpi-value.up { color: var(--moss); }
+.kpi-value.down { color: var(--brick-dark); }
+.kpi-value.neutral { color: var(--ink); }
+
+.kpi-interpretation {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.kpi-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.kpi-detail-list strong {
+  color: var(--ink);
+}
+
+.kpi-tag {
+  align-self: flex-start;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+
+.kpi-tag-ok {
+  background: var(--moss-tint);
+  color: var(--moss);
+}
+
+.kpi-tag-warn {
+  background: var(--amber-tint);
+  color: var(--amber);
+}
+
+@media (max-width: 900px) {
+  .kpi-grid { grid-template-columns: 1fr; }
+}
+
+/* =========================================================
+   CAJA DE SEGURIDAD (menú compacto, mismo patrón que "Más acciones")
+   ========================================================= */
+
+.safebox-menu {
+  min-width: 300px;
+  padding: 12px;
+  gap: 10px;
+}
+
+.safebox-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.safebox-menu-row strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.safebox-menu-row p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  max-width: 170px;
+}
+
+.safebox-menu-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 2px 0;
+}
+
+.safebox-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width: 900px) {
+  .app { padding: 18px; }
+  .stats { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-section-grid { grid-template-columns: 1fr; }
+  .form-section { grid-column: span 1; }
+  .span-2 { grid-column: span 1; }
+  .topbar { flex-direction: column; gap: 14px; }
+}
+
+/* Accesibilidad: foco visible siempre */
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--brick);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de Ventas — Ladrillos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===== ENCABEZADO ===== -->
+  <header class="topbar">
+    <div class="topbar-title">
+      <span class="brand-mark">◆</span>
+      <div>
+        <h1>Registro de Ventas</h1>
+        <p>Control de despachos y facturación — Ladrillera</p>
+      </div>
+    </div>
+
+    <div class="brand-illustration" aria-hidden="true">
+      <svg viewBox="0 0 176 140" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="88" cy="130" rx="80" ry="8" fill="#23201B" opacity="0.12"/>
+
+        <!-- Ladrillo suelto derecho (con huecos) -->
+        <polygon points="152,104 166,97 166,117 152,124" fill="#7A2818"/>
+        <rect x="112" y="104" width="40" height="20" fill="#8C2F1E"/>
+        <polygon points="112,104 152,104 166,97 126,97" fill="#C9946F"/>
+        <circle cx="124.2" cy="101.9" r="2.6" fill="#3E1B12"/>
+        <circle cx="136.2" cy="101.9" r="2.6" fill="#3E1B12"/>
+        <circle cx="148.2" cy="101.9" r="2.6" fill="#3E1B12"/>
+        <circle cx="129.8" cy="99.1" r="2.6" fill="#3E1B12"/>
+        <circle cx="141.8" cy="99.1" r="2.6" fill="#3E1B12"/>
+        <circle cx="153.8" cy="99.1" r="2.6" fill="#3E1B12"/>
+
+        <!-- Torre central: 4 ladrillos apilados -->
+        <polygon points="94,84 108,77 108,97 94,104" fill="#7A2818"/>
+        <rect x="50" y="84" width="44" height="20" fill="#8C2F1E"/>
+
+        <polygon points="94,62 108,55 108,75 94,82" fill="#7A2818"/>
+        <rect x="50" y="62" width="44" height="20" fill="#B23E28"/>
+
+        <polygon points="94,40 108,33 108,53 94,60" fill="#7A2818"/>
+        <rect x="50" y="40" width="44" height="20" fill="#8C2F1E"/>
+
+        <polygon points="94,18 108,11 108,31 94,38" fill="#7A2818"/>
+        <rect x="50" y="18" width="44" height="20" fill="#B23E28"/>
+        <polygon points="50,18 94,18 108,11 64,11" fill="#C9946F"/>
+        <circle cx="63.0" cy="15.9" r="2.6" fill="#3E1B12"/>
+        <circle cx="76.2" cy="15.9" r="2.6" fill="#3E1B12"/>
+        <circle cx="89.4" cy="15.9" r="2.6" fill="#3E1B12"/>
+        <circle cx="68.6" cy="13.1" r="2.6" fill="#3E1B12"/>
+        <circle cx="81.8" cy="13.1" r="2.6" fill="#3E1B12"/>
+        <circle cx="95.0" cy="13.1" r="2.6" fill="#3E1B12"/>
+
+        <!-- Líneas de mortero de la torre -->
+        <rect x="50" y="82" width="44" height="2" fill="#EAE3D4"/>
+        <rect x="50" y="60" width="44" height="2" fill="#EAE3D4"/>
+        <rect x="50" y="38" width="44" height="2" fill="#EAE3D4"/>
+
+        <!-- Ladrillo suelto izquierdo (con huecos, al frente) -->
+        <polygon points="44,98 58,91 58,111 44,118" fill="#7A2818"/>
+        <rect x="4" y="98" width="40" height="20" fill="#B23E28"/>
+        <polygon points="4,98 44,98 58,91 18,91" fill="#DDB08A"/>
+        <circle cx="16.2" cy="95.9" r="2.4" fill="#3E1B12"/>
+        <circle cx="28.2" cy="95.9" r="2.4" fill="#3E1B12"/>
+        <circle cx="40.2" cy="95.9" r="2.4" fill="#3E1B12"/>
+        <circle cx="21.8" cy="93.1" r="2.4" fill="#3E1B12"/>
+        <circle cx="33.8" cy="93.1" r="2.4" fill="#3E1B12"/>
+        <circle cx="45.8" cy="93.1" r="2.4" fill="#3E1B12"/>
+      </svg>
+    </div>
+
+    <div class="topbar-actions">
+      <span class="status-badge" id="syncBadge" title="Estado de la sincronización automática con Excel">
+        <span class="status-dot"></span><span class="status-text">Excel automático: Inactivo</span>
+      </span>
+      <span class="status-badge" id="badgeCarpetaFacturas" title="Estado de la importación automática de facturas XML">
+        <span class="status-dot"></span><span class="status-text">Carpeta de facturas XML: Inactiva</span>
+      </span>
+    </div>
+  </header>
+
+  <!-- ===== PESTAÑAS DE MES ===== -->
+  <nav class="month-tabs" id="monthTabs" aria-label="Selector de mes"></nav>
+
+  <!-- ===== BARRA DE ESTADÍSTICAS ===== -->
+  <section class="stats" id="statsRow"></section>
+
+  <!-- ===== BARRA DE ACCIONES ===== -->
+  <section class="toolbar">
+    <button class="btn btn-primary" id="btnNuevo">＋ Nuevo registro</button>
+    <button class="btn btn-outline" id="btnActivarSync" title="Elige un archivo Excel que se actualizará solo cada vez que agregues, edites o borres un registro">
+      🔗 Excel yautomático
+    </button>
+    <button class="btn btn-outline" id="btnActivarCarpetaFacturas" title="Elige una carpeta con tus facturas en XML; la app la revisa cada 20 segundos y agrega las nuevas automáticamente">
+      📂 Importar carpeta facturas (XML)
+    </button>
+    <button class="btn btn-ghost" id="btnEscanearAhora" title="Revisar la carpeta ahora mismo, sin esperar" hidden>
+      🔄 Escanear ahora
+    </button>
+    <div class="toolbar-spacer"></div>
+
+    <div class="dropdown" id="dropdownSafebox">
+      <button class="btn btn-outline" id="btnSafebox" aria-haspopup="true" aria-expanded="false">
+        🛡️ Caja de seguridad ▾
+      </button>
+      <div class="dropdown-menu safebox-menu" id="menuSafebox" hidden>
+        <div class="safebox-menu-row">
+          <div>
+            <strong>Crear copia de seguridad</strong>
+            <p>Descarga un archivo con todos los datos actuales.</p>
+          </div>
+          <button class="btn btn-outline" id="btnCrearRespaldo">Crear copia</button>
+        </div>
+        <div class="safebox-menu-divider"></div>
+        <div class="safebox-menu-row">
+          <div>
+            <strong>Restaurar copia de seguridad</strong>
+            <p id="nombreArchivoRespaldo">Ningún archivo seleccionado.</p>
+          </div>
+          <div class="safebox-row-actions">
+            <label class="btn btn-ghost" for="inputRestaurarRespaldo">Elegir archivo</label>
+            <input type="file" id="inputRestaurarRespaldo" accept="application/json" hidden>
+            <button class="btn btn-outline" id="btnRestaurarRespaldo" disabled>Restaurar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dropdown" id="dropdownMasAcciones">
+      <button class="btn btn-outline" id="btnMasAcciones" aria-haspopup="true" aria-expanded="false">
+        Más acciones ▾
+      </button>
+      <div class="dropdown-menu" id="menuMasAcciones" hidden>
+        <label class="dropdown-item" for="inputImportarExcel">
+          📥 Importar Excel
+        </label>
+        <input type="file" id="inputImportarExcel" accept=".xlsx,.xls" hidden>
+        <button class="dropdown-item" id="btnExportarMes">📊 Exportar mes</button>
+        <button class="dropdown-item" id="btnExportarAnio">📊 Exportar todo el año</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item dropdown-item-danger" id="btnBorrarTodo">🗑️ Borrar todos los datos</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TABLA ===== -->
+  <section class="table-wrap">
+    <table id="tablaRegistros">
+      <thead>
+        <tr id="tablaHead"></tr>
+      </thead>
+      <tbody id="tablaBody"></tbody>
+    </table>
+    <p class="empty-state" id="emptyState" hidden>
+      No hay registros en este mes todavía. Usa <strong>“＋ Nuevo registro”</strong> para agregar el primero.
+    </p>
+  </section>
+
+  <!-- ===== ANÁLISIS ESTRATÉGICO Y OPERATIVO ===== -->
+  <section class="charts-section">
+    <h2 class="charts-title">📊 Análisis estratégico y operativo</h2>
+    <p class="charts-subtitle">Con todos los registros guardados, no solo el mes activo.</p>
+
+    <!-- Gráfica 1: Volumen de ventas y tendencia por cliente -->
+    <div class="chart-detail-card">
+      <h3>1 · Volumen de ventas y tendencia por cliente</h3>
+      <p class="chart-detail-purpose">Evalúa la evolución mensual de ventas a cada cliente y detecta patrones de compra.</p>
+      <div class="chart-detail-grid">
+        <div class="chart-detail-visual">
+          <canvas id="chartTendenciaClientes"></canvas>
+        </div>
+        <div class="chart-detail-table-wrap">
+          <table class="chart-detail-table">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th class="num">Total (mes)</th>
+                <th class="num">Var. %</th>
+                <th class="num">Ticket prom.</th>
+                <th class="num">Frecuencia</th>
+              </tr>
+            </thead>
+            <tbody id="tablaClientesDetalle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráfica 2: Distribución por código de ladrillo y margen -->
+    <div class="chart-detail-card">
+      <h3>2 · Distribución por código de ladrillo y margen</h3>
+      <p class="chart-detail-purpose">Qué códigos de ladrillo concentran más ventas y su contribución de margen.</p>
+      <div class="chart-detail-grid chart-detail-grid-donut">
+        <div class="chart-detail-visual chart-detail-visual-donut">
+          <canvas id="chartDistribucionProductos"></canvas>
+        </div>
+        <div class="chart-detail-table-wrap">
+          <table class="chart-detail-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th class="num">Unidades</th>
+                <th class="num">Ingreso (S/)</th>
+                <th class="num">% Part.</th>
+                <th class="num">Margen</th>
+              </tr>
+            </thead>
+            <tbody id="tablaProductosDetalle"></tbody>
+          </table>
+          <p class="chart-detail-footnote">* Margen no disponible: tus registros no guardan el costo unitario, solo el precio de venta.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== INDICADORES CLAVE ===== -->
+  <section class="kpi-section">
+    <h2 class="kpi-title">📌 Indicadores clave del negocio</h2>
+    <p class="kpi-subtitle">Se actualizan solos con cada registro que agregues, edites o borres.</p>
+
+    <div class="kpi-grid">
+      <div class="kpi-card" id="kpiTicketPromedio"></div>
+      <div class="kpi-card" id="kpiVariacionDetallada"></div>
+      <div class="kpi-card" id="kpiRachaVentas"></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ===== MODAL: NUEVO / EDITAR REGISTRO ===== -->
+<div class="modal-overlay" id="modalRegistro" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitulo">Nuevo registro</h2>
+      <button class="modal-close" id="cerrarModalRegistro" aria-label="Cerrar">✕</button>
+    </div>
+    <form id="formRegistro" class="modal-body form-grid">
+      <input type="hidden" id="campoId">
+
+      <fieldset class="form-section span-2">
+        <legend>1 · Fechas</legend>
+        <div class="form-section-grid">
+          <label>Fecha de ingreso <span class="req">*</span>
+            <input type="date" id="campoFechaIngreso" required>
+          </label>
+          <label>Fecha de facturación
+            <input type="date" id="campoFechaFacturacion">
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-section span-2">
+        <legend>2 · Cliente y representante</legend>
+        <div class="form-section-grid">
+          <label>Representante <span class="req">*</span>
+            <input type="text" id="campoRepresentante" list="listaRepresentante" required autocomplete="off">
+            <datalist id="listaRepresentante"></datalist>
+          </label>
+          <label>Cliente o razón social <span class="req">*</span>
+            <input type="text" id="campoCliente" list="listaCliente" required autocomplete="off">
+            <datalist id="listaCliente"></datalist>
+          </label>
+          <label>RUC / DNI
+            <input type="text" id="campoRucDni" list="listaRucDni" autocomplete="off">
+            <datalist id="listaRucDni"></datalist>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-section span-2">
+        <legend>3 · Forma de pago</legend>
+        <div class="form-section-grid">
+          <label>Adelanto o al contado
+            <select id="campoAdelantoContado">
+              <option value="Al contado">Al contado</option>
+              <option value="Adelanto">Adelanto</option>
+            </select>
+          </label>
+          <label>Entidad bancaria / Efectivo
+            <input type="text" id="campoEntidadBancaria" list="listaEntidadBancaria" placeholder="Ej: BCP, Efectivo, Yape" autocomplete="off">
+            <datalist id="listaEntidadBancaria"></datalist>
+          </label>
+          <label>Número de operación
+            <input type="text" id="campoNumeroOperacion" autocomplete="off">
+          </label>
+          <label>Número de factura / boleta
+            <input type="text" id="campoNumeroFactura" autocomplete="off">
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-section span-2">
+        <legend>4 · Producto y montos</legend>
+        <div class="form-section-grid">
+          <label>Código de ladrillo
+            <input type="text" id="campoCodigoLadrillo" list="listaCodigoLadrillo" autocomplete="off">
+            <datalist id="listaCodigoLadrillo"></datalist>
+          </label>
+          <label>Unidad (cantidad) <span class="req">*</span>
+            <input type="number" id="campoUnidad" min="0" step="1" required>
+          </label>
+          <label>Precio unitario (S/) <span class="req">*</span>
+            <input type="number" id="campoPrecioUnitario" min="0" step="0.01" required>
+          </label>
+          <label>Monto total (S/)
+            <input type="number" id="campoMontoTotal" min="0" step="0.01">
+            <small>Se calcula solo: Unidad × Precio unitario. Puedes ajustarlo si lo necesitas.</small>
+          </label>
+          <label>Deuda pendiente (S/)
+            <input type="number" id="campoDeudaPendiente" min="0" step="0.01" value="0">
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-section span-2">
+        <legend>5 · Notas</legend>
+        <label class="span-2">Observaciones
+          <textarea id="campoObservaciones" rows="2"></textarea>
+        </label>
+      </fieldset>
+
+      <div class="modal-footer span-2">
+        <button type="button" class="btn btn-ghost" id="cancelarRegistro">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar registro</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== MODAL: DECISIÓN DE IMPORTACIÓN ===== -->
+<div class="modal-overlay" id="modalImportar" hidden>
+  <div class="modal modal-small">
+    <div class="modal-header">
+      <h2>Importar registros</h2>
+    </div>
+    <div class="modal-body">
+      <p id="textoImportarResumen">¿Deseas agregar estos registros a los datos existentes?</p>
+      <div class="modal-footer modal-footer-stack">
+        <button class="btn btn-primary" id="btnAgregarDatos">Agregar datos</button>
+        <button class="btn btn-accent" id="btnReemplazarDatos">Reemplazar datos del mes</button>
+        <button class="btn btn-ghost" id="btnCancelarImportar">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: CONFIRMAR BORRAR TODO ===== -->
+<div class="modal-overlay" id="modalBorrarTodo" hidden>
+  <div class="modal modal-small modal-danger">
+    <div class="modal-body modal-danger-body">
+      <div class="modal-danger-icon">⚠️</div>
+      <h2 class="modal-danger-title">¿Borrar todos los datos?</h2>
+      <p class="modal-danger-text">
+        Esto eliminará <strong>todos los registros de todos los meses</strong> guardados en esta aplicación.
+        Esta acción no se puede deshacer.
+      </p>
+      <p class="modal-danger-tip">💡 Si tienes dudas, cierra esta ventana y crea antes una copia de seguridad.</p>
+      <div class="modal-footer modal-footer-stack">
+        <button class="btn btn-danger" id="btnConfirmarBorrarTodo">Sí, borrar todo</button>
+        <button class="btn btn-ghost" id="btnCancelarBorrarTodo">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CONTENEDOR DE TOASTS ===== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
