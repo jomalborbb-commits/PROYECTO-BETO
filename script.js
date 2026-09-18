@@ -242,6 +242,17 @@ async function activarExcelAutomatico() {
     mostrarToast("Tu navegador no soporta esta función. Usa Chrome o Edge.", "error");
     return;
   }
+
+  // Hallazgo de la auditoría UX: el usuario no sabía si este botón guardaba,
+  // importaba o exportaba. Se aclara explícitamente ANTES de elegir el archivo.
+  const confirmado = confirm(
+    "Vas a elegir un archivo Excel (nuevo o existente).\n\n" +
+    "A partir de ahora, ESE archivo se sobrescribirá automáticamente " +
+    "cada vez que agregues, edites, borres o importes un registro — " +
+    "no es una exportación de una sola vez.\n\n¿Deseas continuar?"
+  );
+  if (!confirmado) return;
+
   try {
     const handle = await window.showSaveFilePicker({
       suggestedName: `REGISTROS_ANUALES_${anioPredominante()}.xlsx`,
@@ -451,6 +462,7 @@ async function escanearCarpetaFacturas() {
       renderTodo();
       actualizarListasAutocompletado();
       mostrarToast(`Se importaron ${nuevosImportados} factura(s) nueva(s) desde XML.`, "success");
+      registrarEnHistorial("Importó facturas XML (automático)", `${nuevosImportados} factura(s)`);
     }
   } catch (err) {
     console.error("Error escaneando la carpeta de facturas:", err);
@@ -605,27 +617,37 @@ function renderTodo() {
   renderStats();
   renderTablaHead();
   renderTablaBody();
-  actualizarAnalisisEstrategico();
+  actualizarPanelControl();
   actualizarIndicadoresClave();
 }
 
 /* =========================================================
-   ANÁLISIS ESTRATÉGICO Y OPERATIVO (2 gráficas detalladas,
-   con TODOS los registros guardados) — usan Chart.js.
+   PANEL DE CONTROL — 6 TARJETAS FLIP 3D (FASE 1 del rediseño
+   industrial/futurista). Con TODOS los registros guardados.
    ========================================================= */
 
-const PALETA_GRAFICOS = ["#B23E28", "#47624B", "#B3801F", "#5C564A", "#8C2F1E", "#7A8B6F", "#C2B79E", "#3F5566"];
+const PALETA_GRAFICOS = ["#4DD8E0", "#E8A33D", "#8C2F1E", "#7A8B6F", "#B23E28", "#3F5566"];
 
-let chartTendenciaClientes = null;
-let chartDistribucionProductos = null;
+let miniChartVentasMes = null;
+let miniChartFormaPago = null;
+let miniChartBancos = null;
 
-// Crea el gráfico si no existe, o solo actualiza sus datos si ya existe
-// (evita duplicar canvases y parpadeos al volver a dibujar).
-function dibujarOActualizarChart(referenciaPrevia, canvasId, config) {
+// Notación compacta para que un monto quepa en una tarjeta de 3x4cm
+// (ej. "S/12.4K" en vez de "S/ 12,400.00").
+function formatearMonedaCompacta(numero) {
+  const v = Number(numero) || 0;
+  const signo = v < 0 ? "-" : "";
+  const abs = Math.abs(v);
+  if (abs >= 1000000) return `${signo}S/${(abs / 1000000).toFixed(1)}M`;
+  if (abs >= 1000) return `${signo}S/${(abs / 1000).toFixed(1)}K`;
+  return `${signo}S/${abs.toFixed(0)}`;
+}
+
+// Gráfico miniatura sin ejes ni leyenda (no entran en 90x46px);
+// el detalle numérico se muestra al voltear la tarjeta, no en el gráfico.
+function dibujarMiniChart(referenciaPrevia, canvasId, config) {
   if (referenciaPrevia) {
     referenciaPrevia.data = config.data;
-    referenciaPrevia.options = config.options;
-    referenciaPrevia.config.type = config.type;
     referenciaPrevia.update();
     return referenciaPrevia;
   }
@@ -634,203 +656,175 @@ function dibujarOActualizarChart(referenciaPrevia, canvasId, config) {
   return new Chart(canvas, config);
 }
 
-function actualizarAnalisisEstrategico() {
+function actualizarPanelControl() {
   if (typeof Chart === "undefined") return; // Chart.js no cargó (sin internet la primera vez)
-  actualizarGraficaTendenciaClientes();
-  actualizarGraficaDistribucionProductos();
+
+  actualizarCardVentasMes();
+  actualizarCardFormaPago();
+  actualizarCardTopDeudor();
+  actualizarCardTopRepresentante();
+  actualizarCardTopCodigo();
+  actualizarCardBancos();
 }
 
-/* ---------------------------------------------------------
-   GRÁFICA 1: Volumen de ventas y tendencia por cliente
-   --------------------------------------------------------- */
-function actualizarGraficaTendenciaClientes() {
-  // Monto total histórico por cliente (para elegir a los principales)
-  const montoHistoricoPorCliente = {};
-  registros.forEach(r => {
-    const nombre = (r.cliente || "Sin nombre").trim();
-    montoHistoricoPorCliente[nombre] = (montoHistoricoPorCliente[nombre] || 0) + (Number(r.montoTotal) || 0);
-  });
+/* --- 1. VENTAS/MES: sparkline anual + ranking de los 3 mejores meses --- */
+function actualizarCardVentasMes() {
+  const totalesPorMes = MESES.map((_, idx) => registrosDelMes(idx).reduce((s, r) => s + (Number(r.montoTotal) || 0), 0));
+  const totalAnual = totalesPorMes.reduce((s, v) => s + v, 0);
 
-  const topClientes = Object.entries(montoHistoricoPorCliente)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6)
-    .map(([nombre]) => nombre);
+  document.getElementById("cpVentasMesValor").textContent = formatearMonedaCompacta(totalAnual);
 
-  let datasets;
-  if (topClientes.length > 0) {
-    // Serie mensual (12 meses) por cada cliente principal
-    datasets = topClientes.map((nombre, i) => {
-      const datosPorMes = MESES.map((_, idx) =>
-        registrosDelMes(idx)
-          .filter(r => (r.cliente || "Sin nombre").trim() === nombre)
-          .reduce((s, r) => s + (Number(r.montoTotal) || 0), 0)
-      );
-      const color = PALETA_GRAFICOS[i % PALETA_GRAFICOS.length];
-      return {
-        label: nombre,
-        data: datosPorMes,
-        borderColor: color,
-        backgroundColor: color,
-        tension: 0.3,
-        pointRadius: 3,
-        pointHoverRadius: 5,
-        fill: false,
-      };
-    });
-  } else {
-    // Sin clientes todavía: se muestra el gráfico igual, plano en cero.
-    datasets = [{
-      label: "Sin datos aún",
-      data: MESES.map(() => 0),
-      borderColor: "#C2B79E",
-      backgroundColor: "#C2B79E",
-      tension: 0.3,
-      pointRadius: 2,
-      fill: false,
-    }];
-  }
-
-  chartTendenciaClientes = dibujarOActualizarChart(chartTendenciaClientes, "chartTendenciaClientes", {
+  miniChartVentasMes = dibujarMiniChart(miniChartVentasMes, "miniChartVentasMes", {
     type: "line",
-    data: { labels: MESES.map(m => m.slice(0, 3)), datasets },
+    data: {
+      labels: MESES.map(m => m.slice(0, 3)),
+      datasets: [{ data: totalesPorMes, borderColor: "#4DD8E0", backgroundColor: "rgba(77,216,224,0.15)", borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: true }],
+    },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 10 } } },
-        tooltip: {
-          callbacks: {
-            label: (item) => `${item.dataset.label}: ${formatearMoneda(item.raw)}`,
-          },
-        },
-      },
-      scales: { y: { beginAtZero: true, ticks: { callback: v => "S/ " + v } } },
+      responsive: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: { x: { display: false }, y: { display: false, beginAtZero: true } },
+      elements: { line: { borderJoinStyle: "round" } },
     },
   });
 
-  // --- Tabla de detalle: Cliente, Total (mes), Var. %, Ticket promedio, Frecuencia ---
-  const mesAnteriorIdx = (mesActual - 1 + 12) % 12;
-  const listaMesActual = registrosDelMes(mesActual);
-  const listaMesAnterior = registrosDelMes(mesAnteriorIdx);
+  const top3 = totalesPorMes
+    .map((monto, idx) => ({ mes: MESES[idx], monto }))
+    .sort((a, b) => b.monto - a.monto)
+    .slice(0, 3)
+    .filter(m => m.monto > 0);
 
-  const datosMesPorCliente = {};
-  listaMesActual.forEach(r => {
-    const nombre = (r.cliente || "Sin nombre").trim();
-    if (!datosMesPorCliente[nombre]) datosMesPorCliente[nombre] = { monto: 0, pedidos: 0 };
-    datosMesPorCliente[nombre].monto += Number(r.montoTotal) || 0;
-    datosMesPorCliente[nombre].pedidos += 1;
-  });
-
-  const montoAnteriorPorCliente = {};
-  listaMesAnterior.forEach(r => {
-    const nombre = (r.cliente || "Sin nombre").trim();
-    montoAnteriorPorCliente[nombre] = (montoAnteriorPorCliente[nombre] || 0) + (Number(r.montoTotal) || 0);
-  });
-
-  const filasClientes = Object.entries(datosMesPorCliente)
-    .sort((a, b) => b[1].monto - a[1].monto)
-    .slice(0, 8);
-
-  const cuerpoTabla = document.getElementById("tablaClientesDetalle");
-  if (filasClientes.length === 0) {
-    cuerpoTabla.innerHTML = `<tr class="chart-detail-empty-row"><td colspan="5">No hay ventas registradas en ${MESES[mesActual].toLowerCase()}.</td></tr>`;
-  } else {
-    cuerpoTabla.innerHTML = filasClientes.map(([nombre, datos]) => {
-      const ticketProm = datos.pedidos > 0 ? datos.monto / datos.pedidos : 0;
-      const montoAnterior = montoAnteriorPorCliente[nombre] || 0;
-
-      let variacionTexto = "Nuevo";
-      let claseVariacion = "neutral";
-      if (montoAnterior > 0) {
-        const variacion = ((datos.monto - montoAnterior) / montoAnterior) * 100;
-        claseVariacion = variacion >= 0 ? "up" : "down";
-        variacionTexto = `${variacion >= 0 ? "▲" : "▼"} ${Math.abs(variacion).toFixed(1)}%`;
-      }
-
-      return `<tr>
-        <td title="${nombre}">${nombre}</td>
-        <td class="num">${formatearMoneda(datos.monto)}</td>
-        <td class="num ${claseVariacion}">${variacionTexto}</td>
-        <td class="num">${formatearMoneda(ticketProm)}</td>
-        <td class="num">${datos.pedidos} pedido${datos.pedidos === 1 ? "" : "s"}</td>
-      </tr>`;
-    }).join("");
-  }
+  const back = document.getElementById("cpVentasMesBack");
+  back.innerHTML = `<h4>Top 3 meses</h4>` + (
+    top3.length === 0
+      ? `<p>Aún no hay ventas registradas.</p>`
+      : top3.map((m, i) => `<p><strong>${i + 1}º ${m.mes}</strong><br>${formatearMoneda(m.monto)}</p>`).join("")
+  );
 }
 
-/* ---------------------------------------------------------
-   GRÁFICA 2: Distribución por código de ladrillo y margen
-   --------------------------------------------------------- */
-function actualizarGraficaDistribucionProductos() {
-  const datosPorCodigo = {};
+/* --- 2. ADEL./CONT.: dona mini + montos exactos al voltear --- */
+function actualizarCardFormaPago() {
+  let montoAdelanto = 0, montoContado = 0;
+  registros.forEach(r => {
+    const monto = Number(r.montoTotal) || 0;
+    if (r.adelantoContado === "Adelanto") montoAdelanto += monto; else montoContado += monto;
+  });
+  const total = montoAdelanto + montoContado;
+  const pctContado = total > 0 ? Math.round((montoContado / total) * 100) : 0;
+
+  document.getElementById("cpFormaPagoValor").textContent = total > 0 ? `${pctContado}% CONT.` : "—";
+
+  const datos = total > 0 ? [montoAdelanto, montoContado] : [1, 1];
+  const colores = total > 0 ? ["#E8A33D", "#4DD8E0"] : ["#3A4A4C", "#2A2620"];
+
+  miniChartFormaPago = dibujarMiniChart(miniChartFormaPago, "miniChartFormaPago", {
+    type: "doughnut",
+    data: { datasets: [{ data: datos, backgroundColor: colores, borderWidth: 0 }] },
+    options: { responsive: false, cutout: "62%", plugins: { legend: { display: false }, tooltip: { enabled: false } } },
+  });
+
+  const back = document.getElementById("cpFormaPagoBack");
+  back.innerHTML = total === 0
+    ? `<h4>Forma de pago</h4><p>Aún no hay ventas registradas.</p>`
+    : `<h4>Forma de pago</h4><p><strong>Adelanto</strong><br>${formatearMoneda(montoAdelanto)}</p><p><strong>Al contado</strong><br>${formatearMoneda(montoContado)}</p>`;
+}
+
+/* --- 3. TOP DEUDOR: nombre + ranking de los 3 mayores deudores --- */
+function actualizarCardTopDeudor() {
+  const deudaPorCliente = {};
+  registros.forEach(r => {
+    const nombre = (r.cliente || "Sin nombre").trim();
+    const deuda = Number(r.deudaPendiente) || 0;
+    if (deuda <= 0) return;
+    deudaPorCliente[nombre] = (deudaPorCliente[nombre] || 0) + deuda;
+  });
+  const top = Object.entries(deudaPorCliente).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+  document.getElementById("cpTopDeudorValor").textContent = top.length === 0 ? "S/0 — OK" : `${top[0][0]}`;
+
+  const back = document.getElementById("cpTopDeudorBack");
+  back.innerHTML = `<h4>Top 3 deudores</h4>` + (
+    top.length === 0
+      ? `<p>🎉 Nadie tiene deuda pendiente.</p>`
+      : top.map(([nombre, monto], i) => `<p><strong>${i + 1}º ${nombre}</strong><br>${formatearMoneda(monto)}</p>`).join("")
+  );
+}
+
+/* --- 4. TOP VENDEDOR: representante con más ventas + ranking --- */
+function actualizarCardTopRepresentante() {
+  const montoPorRepresentante = {};
+  registros.forEach(r => {
+    const nombre = (r.representante || "Sin asignar").trim();
+    montoPorRepresentante[nombre] = (montoPorRepresentante[nombre] || 0) + (Number(r.montoTotal) || 0);
+  });
+  const top = Object.entries(montoPorRepresentante).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+  document.getElementById("cpTopRepresentanteValor").textContent = top.length === 0 ? "—" : top[0][0];
+
+  const back = document.getElementById("cpTopRepresentanteBack");
+  back.innerHTML = `<h4>Top 3 vendedores</h4>` + (
+    top.length === 0
+      ? `<p>Aún no hay ventas registradas.</p>`
+      : top.map(([nombre, monto], i) => `<p><strong>${i + 1}º ${nombre}</strong><br>${formatearMoneda(monto)}</p>`).join("")
+  );
+}
+
+/* --- 5. TOP PRODUCTO: código de ladrillo más vendido + ranking --- */
+function actualizarCardTopCodigo() {
+  const unidadesPorCodigo = {};
   registros.forEach(r => {
     const codigo = (r.codigoLadrillo || "Sin código").trim() || "Sin código";
-    if (!datosPorCodigo[codigo]) datosPorCodigo[codigo] = { unidades: 0, ingreso: 0 };
-    datosPorCodigo[codigo].unidades += Number(r.unidad) || 0;
-    datosPorCodigo[codigo].ingreso += Number(r.montoTotal) || 0;
+    unidadesPorCodigo[codigo] = (unidadesPorCodigo[codigo] || 0) + (Number(r.unidad) || 0);
   });
+  const top = Object.entries(unidadesPorCodigo).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
-  const codigosOrdenados = Object.entries(datosPorCodigo).sort((a, b) => b[1].ingreso - a[1].ingreso);
-  const ingresoTotal = codigosOrdenados.reduce((s, [, d]) => s + d.ingreso, 0);
+  document.getElementById("cpTopCodigoValor").textContent = top.length === 0 ? "—" : top[0][0];
 
-  let etiquetas, valores, colores, tooltipFn;
-  if (ingresoTotal > 0) {
-    etiquetas = codigosOrdenados.map(([codigo]) => codigo);
-    valores = codigosOrdenados.map(([, d]) => d.ingreso);
-    colores = PALETA_GRAFICOS;
-    tooltipFn = (item) => {
-      const pct = ((item.raw / ingresoTotal) * 100).toFixed(1);
-      return `${item.label}: ${formatearMoneda(item.raw)} (${pct}%)`;
-    };
-  } else {
-    // Sin ventas todavía: círculo completo en gris neutro, en vez de nada.
-    etiquetas = ["Sin datos aún"];
-    valores = [1];
-    colores = ["#D7CDB8"];
-    tooltipFn = () => "Aún no hay ventas registradas.";
-  }
-
-  chartDistribucionProductos = dibujarOActualizarChart(chartDistribucionProductos, "chartDistribucionProductos", {
-    type: "doughnut",
-    data: {
-      labels: etiquetas,
-      datasets: [{
-        data: valores,
-        backgroundColor: colores,
-        borderColor: "#FFFFFF",
-        borderWidth: 3,
-        hoverOffset: 10,
-        hoverBorderWidth: 4,
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: "55%",
-      plugins: {
-        legend: { position: "bottom", labels: { boxWidth: 13, font: { size: 12 }, padding: 14 } },
-        tooltip: { callbacks: { label: tooltipFn } },
-      },
-    },
-  });
-
-  // --- Tabla de detalle: Código, Unidades, Ingreso, % Participación, Margen ---
-  const cuerpoTabla = document.getElementById("tablaProductosDetalle");
-  if (codigosOrdenados.length === 0) {
-    cuerpoTabla.innerHTML = `<tr class="chart-detail-empty-row"><td colspan="5">Aún no hay ventas registradas.</td></tr>`;
-  } else {
-    cuerpoTabla.innerHTML = codigosOrdenados.map(([codigo, d]) => {
-      const pct = ingresoTotal > 0 ? (d.ingreso / ingresoTotal) * 100 : 0;
-      return `<tr>
-        <td title="${codigo}">${codigo}</td>
-        <td class="num">${d.unidades}</td>
-        <td class="num">${formatearMoneda(d.ingreso)}</td>
-        <td class="num">${pct.toFixed(1)}%</td>
-        <td class="num neutral">N/D</td>
-      </tr>`;
-    }).join("");
-  }
+  const back = document.getElementById("cpTopCodigoBack");
+  back.innerHTML = `<h4>Top 3 productos</h4>` + (
+    top.length === 0
+      ? `<p>Aún no hay ventas registradas.</p>`
+      : top.map(([codigo, u], i) => `<p><strong>${i + 1}º ${codigo}</strong><br>${u} unidades</p>`).join("")
+  );
 }
+
+/* --- 6. BANCO/EFECT.: entidad principal + ranking de participación --- */
+function actualizarCardBancos() {
+  const montoPorBanco = {};
+  registros.forEach(r => {
+    const entidad = (r.entidadBancaria || "Sin especificar").trim() || "Sin especificar";
+    montoPorBanco[entidad] = (montoPorBanco[entidad] || 0) + (Number(r.montoTotal) || 0);
+  });
+  const ordenado = Object.entries(montoPorBanco).sort((a, b) => b[1] - a[1]);
+  const total = ordenado.reduce((s, [, m]) => s + m, 0);
+  const top3 = ordenado.slice(0, 3);
+
+  document.getElementById("cpBancosValor").textContent = total === 0 ? "—" : top3[0][0];
+
+  const datos = total > 0 ? ordenado.map(([, m]) => m) : [1];
+  const colores = total > 0 ? PALETA_GRAFICOS : ["#3A4A4C"];
+
+  miniChartBancos = dibujarMiniChart(miniChartBancos, "miniChartBancos", {
+    type: "pie",
+    data: { datasets: [{ data: datos, backgroundColor: colores, borderWidth: 0 }] },
+    options: { responsive: false, plugins: { legend: { display: false }, tooltip: { enabled: false } } },
+  });
+
+  const back = document.getElementById("cpBancosBack");
+  back.innerHTML = `<h4>Top 3 entidades</h4>` + (
+    total === 0
+      ? `<p>Aún no hay ventas registradas.</p>`
+      : top3.map(([nombre, monto], i) => {
+          const pct = ((monto / total) * 100).toFixed(0);
+          return `<p><strong>${i + 1}º ${nombre}</strong><br>${formatearMoneda(monto)} (${pct}%)</p>`;
+        }).join("")
+  );
+}
+
+/* --- Mecánica de clic para voltear cualquiera de las 6 tarjetas --- */
+document.querySelectorAll(".flip-card").forEach(tarjeta => {
+  tarjeta.addEventListener("click", () => tarjeta.classList.toggle("is-flipped"));
+});
 
 
 /* =========================================================
@@ -1090,6 +1084,7 @@ function eliminarRegistro(id) {
   guardarRegistros();
   renderTodo();
   mostrarToast("Registro eliminado.", "success");
+  registrarEnHistorial("Eliminó registro", `${r.cliente || "Sin cliente"} (${formatearMoneda(r.montoTotal)})`);
 }
 
 // Recalcular monto total automáticamente al cambiar unidad o precio unitario
@@ -1126,9 +1121,11 @@ formRegistro.addEventListener("submit", function (e) {
   if (idEnEdicion) {
     registros = registros.map(r => (r.id === idEnEdicion ? registro : r));
     mostrarToast("Registro actualizado.", "success");
+    registrarEnHistorial("Editó registro", `${registro.cliente || "Sin cliente"} (${formatearMoneda(registro.montoTotal)})`);
   } else {
     registros.push(registro);
     mostrarToast("Registro agregado.", "success");
+    registrarEnHistorial("Agregó registro", `${registro.cliente || "Sin cliente"} (${formatearMoneda(registro.montoTotal)})`);
   }
 
   guardarRegistros();
@@ -1159,6 +1156,7 @@ document.addEventListener("keydown", (e) => {
   if (!modalRegistro.hidden) cerrarModalRegistro();
   if (!document.getElementById("modalImportar").hidden) cerrarModalImportar();
   if (!document.getElementById("modalBorrarTodo").hidden) cerrarModalBorrarTodo();
+  if (!document.getElementById("modalHistorial").hidden) document.getElementById("modalHistorial").hidden = true;
 });
 
 /* =========================================================
@@ -1177,12 +1175,14 @@ document.getElementById("btnBorrarTodo").addEventListener("click", function () {
 document.getElementById("btnCancelarBorrarTodo").addEventListener("click", cerrarModalBorrarTodo);
 
 document.getElementById("btnConfirmarBorrarTodo").addEventListener("click", function () {
+  const cantidadBorrada = registros.length;
   registros = [];
   guardarRegistros();
   renderTodo();
   actualizarListasAutocompletado();
   cerrarModalBorrarTodo();
   mostrarToast("Todos los datos fueron borrados.", "success");
+  registrarEnHistorial("Borró TODOS los datos", `${cantidadBorrada} registro(s) eliminados`);
 });
 
 /* =========================================================
@@ -1458,11 +1458,13 @@ document.getElementById("inputImportarExcel").addEventListener("change", functio
 
 document.getElementById("btnAgregarDatos").addEventListener("click", function () {
   if (!datosImportadosPendientes) return;
+  const cantidad = datosImportadosPendientes.length;
   registros = registros.concat(datosImportadosPendientes);
   guardarRegistros();
   cerrarModalImportar();
   renderTodo();
   mostrarToast("✅ Datos exportados correctamente a Excel".replace("exportados", "importados"), "success");
+  registrarEnHistorial("Importó Excel (agregó)", `${cantidad} registro(s)`);
 });
 
 document.getElementById("btnReemplazarDatos").addEventListener("click", function () {
@@ -1483,6 +1485,7 @@ document.getElementById("btnReemplazarDatos").addEventListener("click", function
 
   const nombresMeses = Array.from(mesesEnArchivo).sort((a, b) => a - b).map(m => MESES[m]).join(", ");
   mostrarToast(`Datos reemplazados correctamente (${nombresMeses}).`, "success");
+  registrarEnHistorial("Importó Excel (reemplazó)", `Meses: ${nombresMeses}`);
 });
 
 document.getElementById("btnCancelarImportar").addEventListener("click", cerrarModalImportar);
@@ -1554,6 +1557,7 @@ document.getElementById("btnRestaurarRespaldo").addEventListener("click", functi
       renderTodo();
       actualizarListasAutocompletado();
       mostrarToast("Copia de seguridad restaurada correctamente.", "success");
+      registrarEnHistorial("Restauró copia de seguridad", `${listaRestaurada.length} registro(s)`);
 
       // Limpiar la selección para evitar restaurar el mismo archivo dos veces por error.
       archivoRespaldoSeleccionado = null;
@@ -1617,6 +1621,87 @@ document.addEventListener("click", (e) => {
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") cerrarTodosLosDropdowns();
+});
+
+/* =========================================================
+   HISTORIAL DE CAMBIOS (Fase 3, resuelta)
+   IMPORTANTE: esto es una bitácora de referencia, NO seguridad.
+   El "autor" es un texto libre que cualquiera puede escribir —
+   no hay contraseña ni verificación. Para eso se necesitaría un
+   backend real con inicio de sesión, que esta app no tiene.
+   ========================================================= */
+
+const HISTORIAL_KEY = "historial_cambios_v1";
+const AUTOR_SESION_KEY = "autorSesionActual";
+const MAX_ENTRADAS_HISTORIAL = 300;
+
+function obtenerAutorActual() {
+  const input = document.getElementById("inputAutorSesion");
+  const valor = (input && input.value.trim()) || sessionStorage.getItem(AUTOR_SESION_KEY) || "";
+  return valor || "Sin nombre";
+}
+
+document.getElementById("inputAutorSesion").addEventListener("change", function (e) {
+  sessionStorage.setItem(AUTOR_SESION_KEY, e.target.value.trim());
+});
+
+// Al cargar la página, si ya habían escrito su nombre en esta pestaña
+// (sessionStorage), lo vuelve a poner en el campo.
+(function restaurarAutorSesion() {
+  const guardado = sessionStorage.getItem(AUTOR_SESION_KEY);
+  if (guardado) document.getElementById("inputAutorSesion").value = guardado;
+})();
+
+function cargarHistorial() {
+  try {
+    const raw = localStorage.getItem(HISTORIAL_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function registrarEnHistorial(accion, detalle) {
+  const historial = cargarHistorial();
+  historial.unshift({
+    fecha: new Date().toISOString(),
+    autor: obtenerAutorActual(),
+    accion,
+    detalle,
+  });
+  localStorage.setItem(HISTORIAL_KEY, JSON.stringify(historial.slice(0, MAX_ENTRADAS_HISTORIAL)));
+}
+
+function formatearFechaHistorial(isoStr) {
+  const d = new Date(isoStr);
+  return d.toLocaleString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function abrirModalHistorial() {
+  const historial = cargarHistorial();
+  const lista = document.getElementById("historialLista");
+  lista.innerHTML = historial.length === 0
+    ? `<p class="analytics-list-empty">Todavía no hay cambios registrados.</p>`
+    : historial.map(h => `
+        <div class="historial-fila">
+          <span class="historial-fecha">${formatearFechaHistorial(h.fecha)}</span><br>
+          <strong>${h.autor}</strong> — ${h.accion}${h.detalle ? `: ${h.detalle}` : ""}
+        </div>
+      `).join("");
+  abrirModal(document.getElementById("modalHistorial"));
+}
+
+document.getElementById("btnVerHistorial").addEventListener("click", function () {
+  cerrarTodosLosDropdowns();
+  abrirModalHistorial();
+});
+
+document.getElementById("cerrarModalHistorial").addEventListener("click", () => {
+  document.getElementById("modalHistorial").hidden = true;
+});
+
+document.getElementById("modalHistorial").addEventListener("click", (e) => {
+  if (e.target.id === "modalHistorial") document.getElementById("modalHistorial").hidden = true;
 });
 
 /* =========================================================

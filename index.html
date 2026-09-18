@@ -77,6 +77,8 @@
     </div>
 
     <div class="topbar-actions">
+      <input type="text" id="inputAutorSesion" class="autor-input" placeholder="Tu nombre (para el historial)"
+        title="Se guarda junto a cada cambio que hagas, solo como referencia interna. No es una contraseña ni protege nada — cualquiera puede escribir cualquier nombre.">
       <span class="status-badge" id="syncBadge" title="Estado de la sincronización automática con Excel">
         <span class="status-dot"></span><span class="status-text">Excel automático: Inactivo</span>
       </span>
@@ -96,7 +98,7 @@
   <section class="toolbar">
     <button class="btn btn-primary" id="btnNuevo">＋ Nuevo registro</button>
     <button class="btn btn-outline" id="btnActivarSync" title="Elige un archivo Excel que se actualizará solo cada vez que agregues, edites o borres un registro">
-      🔗 Excel yautomático
+      🔗 Excel automático
     </button>
     <button class="btn btn-outline" id="btnActivarCarpetaFacturas" title="Elige una carpeta con tus facturas en XML; la app la revisa cada 20 segundos y agrega las nuevas automáticamente">
       📂 Importar carpeta facturas (XML)
@@ -145,6 +147,8 @@
         <button class="dropdown-item" id="btnExportarMes">📊 Exportar mes</button>
         <button class="dropdown-item" id="btnExportarAnio">📊 Exportar todo el año</button>
         <div class="dropdown-divider"></div>
+        <button class="dropdown-item" id="btnVerHistorial">🕒 Ver historial de cambios</button>
+        <div class="dropdown-divider"></div>
         <button class="dropdown-item dropdown-item-danger" id="btnBorrarTodo">🗑️ Borrar todos los datos</button>
       </div>
     </div>
@@ -163,60 +167,79 @@
     </p>
   </section>
 
-  <!-- ===== ANÁLISIS ESTRATÉGICO Y OPERATIVO ===== -->
-  <section class="charts-section">
-    <h2 class="charts-title">📊 Análisis estratégico y operativo</h2>
-    <p class="charts-subtitle">Con todos los registros guardados, no solo el mes activo.</p>
+  <!-- ===== FASE 1 (UI): PANEL DE CONTROL INDUSTRIAL — 6 gráficos compactos ===== -->
+  <section class="control-panel-section">
+    <h2 class="control-panel-title">⚙ Panel de control — Indicadores operativos</h2>
+    <p class="control-panel-subtitle">Haz clic en cualquier tarjeta para voltearla y ver el detalle. Con todos los registros guardados.</p>
 
-    <!-- Gráfica 1: Volumen de ventas y tendencia por cliente -->
-    <div class="chart-detail-card">
-      <h3>1 · Volumen de ventas y tendencia por cliente</h3>
-      <p class="chart-detail-purpose">Evalúa la evolución mensual de ventas a cada cliente y detecta patrones de compra.</p>
-      <div class="chart-detail-grid">
-        <div class="chart-detail-visual">
-          <canvas id="chartTendenciaClientes"></canvas>
-        </div>
-        <div class="chart-detail-table-wrap">
-          <table class="chart-detail-table">
-            <thead>
-              <tr>
-                <th>Cliente</th>
-                <th class="num">Total (mes)</th>
-                <th class="num">Var. %</th>
-                <th class="num">Ticket prom.</th>
-                <th class="num">Frecuencia</th>
-              </tr>
-            </thead>
-            <tbody id="tablaClientesDetalle"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <div class="control-panel-grid">
 
-    <!-- Gráfica 2: Distribución por código de ladrillo y margen -->
-    <div class="chart-detail-card">
-      <h3>2 · Distribución por código de ladrillo y margen</h3>
-      <p class="chart-detail-purpose">Qué códigos de ladrillo concentran más ventas y su contribución de margen.</p>
-      <div class="chart-detail-grid chart-detail-grid-donut">
-        <div class="chart-detail-visual chart-detail-visual-donut">
-          <canvas id="chartDistribucionProductos"></canvas>
+      <button class="flip-card" id="flipVentasMes" aria-label="Ventas por mes, clic para ver detalle">
+        <div class="flip-card-inner">
+          <div class="flip-card-face flip-card-front">
+            <span class="cp-label">VENTAS/MES</span>
+            <canvas id="miniChartVentasMes" width="90" height="46"></canvas>
+            <span class="cp-value" id="cpVentasMesValor">—</span>
+          </div>
+          <div class="flip-card-face flip-card-back" id="cpVentasMesBack"></div>
         </div>
-        <div class="chart-detail-table-wrap">
-          <table class="chart-detail-table">
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th class="num">Unidades</th>
-                <th class="num">Ingreso (S/)</th>
-                <th class="num">% Part.</th>
-                <th class="num">Margen</th>
-              </tr>
-            </thead>
-            <tbody id="tablaProductosDetalle"></tbody>
-          </table>
-          <p class="chart-detail-footnote">* Margen no disponible: tus registros no guardan el costo unitario, solo el precio de venta.</p>
+      </button>
+
+      <button class="flip-card" id="flipFormaPago" aria-label="Adelanto vs al contado, clic para ver detalle">
+        <div class="flip-card-inner">
+          <div class="flip-card-face flip-card-front">
+            <span class="cp-label">ADEL./CONT.</span>
+            <canvas id="miniChartFormaPago" width="70" height="70"></canvas>
+            <span class="cp-value" id="cpFormaPagoValor">—</span>
+          </div>
+          <div class="flip-card-face flip-card-back" id="cpFormaPagoBack"></div>
         </div>
-      </div>
+      </button>
+
+      <button class="flip-card" id="flipTopDeudor" aria-label="Cliente con más deuda, clic para ver detalle">
+        <div class="flip-card-inner">
+          <div class="flip-card-face flip-card-front">
+            <span class="cp-label">TOP DEUDOR</span>
+            <span class="cp-icon">⚠</span>
+            <span class="cp-value cp-value-small" id="cpTopDeudorValor">—</span>
+          </div>
+          <div class="flip-card-face flip-card-back" id="cpTopDeudorBack"></div>
+        </div>
+      </button>
+
+      <button class="flip-card" id="flipTopRepresentante" aria-label="Mejor representante, clic para ver detalle">
+        <div class="flip-card-inner">
+          <div class="flip-card-face flip-card-front">
+            <span class="cp-label">TOP VENDEDOR</span>
+            <span class="cp-icon">🏆</span>
+            <span class="cp-value cp-value-small" id="cpTopRepresentanteValor">—</span>
+          </div>
+          <div class="flip-card-face flip-card-back" id="cpTopRepresentanteBack"></div>
+        </div>
+      </button>
+
+      <button class="flip-card" id="flipTopCodigo" aria-label="Código de ladrillo más vendido, clic para ver detalle">
+        <div class="flip-card-inner">
+          <div class="flip-card-face flip-card-front">
+            <span class="cp-label">TOP PRODUCTO</span>
+            <span class="cp-icon">▦</span>
+            <span class="cp-value cp-value-small" id="cpTopCodigoValor">—</span>
+          </div>
+          <div class="flip-card-face flip-card-back" id="cpTopCodigoBack"></div>
+        </div>
+      </button>
+
+      <button class="flip-card" id="flipBancos" aria-label="Entidad bancaria principal, clic para ver detalle">
+        <div class="flip-card-inner">
+          <div class="flip-card-face flip-card-front">
+            <span class="cp-label">BANCO/EFECT.</span>
+            <canvas id="miniChartBancos" width="70" height="70"></canvas>
+            <span class="cp-value" id="cpBancosValor">—</span>
+          </div>
+          <div class="flip-card-face flip-card-back" id="cpBancosBack"></div>
+        </div>
+      </button>
+
     </div>
   </section>
 
@@ -366,6 +389,25 @@
         <button class="btn btn-danger" id="btnConfirmarBorrarTodo">Sí, borrar todo</button>
         <button class="btn btn-ghost" id="btnCancelarBorrarTodo">Cancelar</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: HISTORIAL DE CAMBIOS ===== -->
+<div class="modal-overlay" id="modalHistorial" hidden>
+  <div class="modal modal-small">
+    <div class="modal-header">
+      <h2>🕒 Historial de cambios</h2>
+      <button class="modal-close" id="cerrarModalHistorial" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="historial-aviso">
+        ⚠️ Este historial es solo una bitácora de referencia — el nombre lo escribe
+        cada persona libremente, no hay contraseña ni verificación real.
+        Para seguridad real (que alguien no pueda hacerse pasar por otra persona)
+        se necesita un servidor con inicio de sesión, que hoy esta app no tiene.
+      </p>
+      <div class="historial-lista" id="historialLista"></div>
     </div>
   </div>
 </div>

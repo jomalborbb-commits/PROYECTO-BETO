@@ -123,7 +123,52 @@ body {
   display: flex;
   gap: 10px;
   flex-shrink: 0;
+  align-items: center;
 }
+
+.autor-input {
+  font-family: var(--font-body);
+  font-size: 12px;
+  padding: 7px 10px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  color: var(--ink);
+  width: 150px;
+}
+
+.autor-input:focus {
+  outline: 2px solid var(--brick);
+  outline-offset: 1px;
+  border-color: var(--brick);
+}
+
+.historial-aviso {
+  background: var(--amber-tint);
+  border: 1px solid var(--amber);
+  border-radius: var(--radius-s);
+  padding: 10px 12px;
+  font-size: 11.5px;
+  color: var(--ink);
+  margin: 0 0 14px;
+}
+
+.historial-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.historial-fila {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+  font-size: 12.5px;
+}
+
+.historial-fila strong { color: var(--brick-dark); }
+.historial-fila .historial-fecha { color: var(--ink-soft); font-size: 11px; }
 
 .brand-illustration {
   flex-shrink: 0;
@@ -670,140 +715,151 @@ td.debt-zero { color: var(--moss); }
 }
 
 /* =========================================================
-   ANÁLISIS ESTRATÉGICO Y OPERATIVO (2 gráficas detalladas)
+   FASE 1 (UI): PANEL DE CONTROL INDUSTRIAL
+   6 tarjetas compactas (3cm × 4cm) que voltean en 3D al clic.
+   Estilo intencionalmente OSCURO y de alto contraste, distinto
+   al resto de la página — como el tablero de un camión de carga,
+   no como una app de hábitos. Números en monoespaciada.
    ========================================================= */
 
-.charts-section {
+.control-panel-section {
   margin-top: 26px;
-  padding-top: 22px;
-  border-top: 2px solid var(--line);
-}
-
-.charts-title {
-  font-family: var(--font-display);
-  font-size: 19px;
-  font-weight: 700;
-  margin: 0 0 4px;
-}
-
-.charts-subtitle {
-  margin: 0 0 16px;
-  color: var(--ink-soft);
-  font-size: 13px;
-}
-
-.chart-detail-card {
-  background: var(--surface);
-  border: 1px solid var(--line);
+  padding: 22px 22px 26px;
   border-radius: var(--radius-m);
-  padding: 18px 20px;
-  box-shadow: var(--shadow-card);
-  margin-bottom: 16px;
+  /* Fondo "rayos X de ladrillos": líneas finas tipo wireframe/neón
+     sobre panel casi negro, distinto del fondo cálido del resto de la página. */
+  background-color: #14110D;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(77,216,224,0.07) 0px, rgba(77,216,224,0.07) 1px, transparent 1px, transparent 42px),
+    repeating-linear-gradient(90deg, rgba(77,216,224,0.07) 0px, rgba(77,216,224,0.07) 1px, transparent 1px, transparent 84px);
+  box-shadow: inset 0 0 60px rgba(0,0,0,0.6);
 }
 
-.chart-detail-card h3 {
-  font-family: var(--font-display);
-  font-size: 15px;
+.control-panel-title {
+  font-family: var(--font-mono);
+  font-size: 17px;
   font-weight: 700;
+  letter-spacing: 0.04em;
   margin: 0 0 4px;
-  color: var(--ink);
+  color: #E8A33D;
+  text-transform: uppercase;
 }
 
-.chart-detail-purpose {
-  margin: 0 0 14px;
-  font-size: 12.5px;
-  color: var(--ink-soft);
-}
-
-.chart-detail-grid {
-  display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
-  gap: 20px;
-  align-items: stretch;
-}
-
-.chart-detail-visual {
-  position: relative;
-  height: 260px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #FDF1E4;
-  border-radius: var(--radius-s);
-}
-
-.chart-detail-table-wrap {
-  overflow-x: auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.chart-detail-table {
-  border-collapse: collapse;
-  width: 100%;
+.control-panel-subtitle {
+  margin: 0 0 18px;
+  color: #9C9488;
   font-size: 12px;
 }
 
-.chart-detail-table th {
-  text-align: left;
-  font-family: var(--font-display);
+.control-panel-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+/* --- Mecánica de la tarjeta que voltea (flip card 3D) --- */
+.flip-card {
+  width: 3cm;
+  height: 4cm;
+  min-width: 108px;  /* respaldo por si "cm" se calcula distinto según el monitor */
+  min-height: 144px;
+  perspective: 800px; /* la "profundidad" 3D: sin esto, el giro se ve plano */
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.55s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.flip-card.is-flipped .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 6px;
+  border: 1px solid #3A4A4C;
+  background: linear-gradient(160deg, #1B1712 0%, #100E0A 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 6px;
+  box-shadow: 0 0 0 1px rgba(77,216,224,0.15), 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.flip-card-front { transform: rotateY(0deg); }
+.flip-card-back {
+  transform: rotateY(180deg);
+  overflow-y: auto;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 10px 8px;
+}
+
+.flip-card:hover .flip-card-face {
+  border-color: #4DD8E0;
+}
+
+.cp-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
   font-weight: 700;
-  font-size: 11px;
-  color: var(--brick-dark);
+  letter-spacing: 0.06em;
+  color: #4DD8E0;
+}
+
+.cp-value {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: #F4F0E8;
+  line-height: 1.1;
+}
+
+.cp-value-small { font-size: 11px; text-align: center; }
+
+.cp-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.flip-card-back h4 {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: #E8A33D;
+  margin: 0 0 6px;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
-  padding: 8px 8px;
-  background: #FBE4CC;
-  border-bottom: 2px solid var(--line);
-  white-space: nowrap;
+  letter-spacing: 0.04em;
 }
 
-.chart-detail-table td {
-  padding: 7px 8px;
-  border-bottom: 1px solid var(--line);
-  white-space: nowrap;
+.flip-card-back p {
+  /* Cuerpo en serif, según el estilo tipográfico pedido para el resto del texto */
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 10.5px;
+  color: #D9D3C4;
+  margin: 0 0 4px;
+  line-height: 1.35;
 }
 
-.chart-detail-table th.num, .chart-detail-table td.num {
-  text-align: right;
+.flip-card-back strong {
+  color: #F4F0E8;
+  font-family: var(--font-mono);
 }
 
-.chart-detail-table td.up { color: var(--moss); font-weight: 600; }
-.chart-detail-table td.down { color: var(--brick-dark); font-weight: 600; }
-.chart-detail-table td.neutral { color: var(--ink-soft); font-style: italic; }
-
-.chart-detail-empty-row td {
-  text-align: center;
-  color: var(--ink-soft);
-  font-style: italic;
-  padding: 20px 8px;
-}
-
-.chart-detail-footnote {
-  margin: 10px 0 0;
-  font-size: 11px;
-  color: var(--ink-soft);
-  font-style: italic;
-}
-
-@media (max-width: 900px) {
-  .chart-detail-grid { grid-template-columns: 1fr; }
-  .chart-detail-visual { height: 220px; }
-}
-
-/* Gráfica 2: dona más grande y protagonista */
-.chart-detail-grid-donut {
-  grid-template-columns: 1.15fr 0.85fr;
-}
-
-.chart-detail-visual-donut {
-  height: 340px;
-}
-
-@media (max-width: 900px) {
-  .chart-detail-grid-donut { grid-template-columns: 1fr; }
-  .chart-detail-visual-donut { height: 280px; }
+@media (max-width: 700px) {
+  .control-panel-grid { justify-content: center; }
 }
 
 /* =========================================================
