@@ -7,155 +7,243 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=20261036">
+<!-- (La pantalla de bienvenida se quitó a pedido del usuario: splash.css y splash.js siguen en la carpeta, sin usarse) -->
+<!-- Ventana "Ventas por mes" (editor de gráfico de líneas); ver ventas-mes.js -->
+<link rel="stylesheet" href="ventas-mes.css?v=20261036">
+<!-- Nuevo diseño: menú lateral, barra superior y tarjetas (carga al final para sobrescribir colores); ver dashboard.css -->
+<link rel="stylesheet" href="dashboard.css?v=20261036">
+<!-- Ingresos y egresos: selector del menú, registro de egresos y su formulario; ver egresos.js -->
+<link rel="stylesheet" href="egresos.css?v=20261036">
+<!-- Ventana "¿Mis ventas y pagos son parecidos?" (desviación media absoluta); ver parejos.js -->
+<link rel="stylesheet" href="parejos.css?v=20261036">
+<!-- Ventana "Estabilidad" (desviación estándar); ver estabilidad.js -->
+<link rel="stylesheet" href="estabilidad.css?v=20261036">
+<!-- Ventana "Medidas de posición" (cuartiles, quintiles, deciles y percentiles); ver posicion.js -->
+<link rel="stylesheet" href="posicion.css?v=20261036">
+<!-- Vista simple de las ventanas de análisis («Más detalles»); ver simple.js -->
+<link rel="stylesheet" href="simple.css?v=20261036">
+<!-- Panel de un vistazo: indicadores de arriba, 3 gráficas y "Salud de tu negocio"; ver negocio.js -->
+<link rel="stylesheet" href="negocio.css?v=20261036">
+<!-- Esfera 3D «Mapa de mi negocio» (Inicio); ver esfera.js -->
+<link rel="stylesheet" href="iconos.css?v=20261036">
+<link rel="stylesheet" href="esfera.css?v=20261036">
+<link rel="stylesheet" href="informes.css?v=20261036">
+<link rel="stylesheet" href="tooltip-lateral.css?v=20261036">
+<link rel="stylesheet" href="ubicacion.css?v=20261036">
+<link rel="stylesheet" href="modelos.css?v=20261036">
 </head>
 <body>
 
-<div class="app">
+<div class="app shell" id="shell">
 
-  <!-- ===== ENCABEZADO ===== -->
-  <header class="topbar">
-    <div class="topbar-title">
-      <span class="brand-mark">◆</span>
-      <div>
-        <h1>Registro de Ventas</h1>
-        <p>Control de despachos y facturación — Ladrillera</p>
+  <!-- ===== MENÚ LATERAL (todos los botones, ordenados por tema) ===== -->
+  <aside class="sidebar" id="sidebar" aria-label="Menú principal">
+    <div class="sb-logo">
+      <img class="sb-logo-ico" src="assets/img/logo-crf.png" alt="Logo de CRF" width="54" height="54">
+      <div class="sb-logo-texto">
+        <strong>CRF &amp; LADRILLOS S.A.C.</strong>
       </div>
     </div>
 
-    <div class="brand-illustration" aria-hidden="true">
-      <svg viewBox="0 0 176 140" xmlns="http://www.w3.org/2000/svg">
-        <ellipse cx="88" cy="130" rx="80" ry="8" fill="#23201B" opacity="0.12"/>
-
-        <!-- Ladrillo suelto derecho (con huecos) -->
-        <polygon points="152,104 166,97 166,117 152,124" fill="#7A2818"/>
-        <rect x="112" y="104" width="40" height="20" fill="#8C2F1E"/>
-        <polygon points="112,104 152,104 166,97 126,97" fill="#C9946F"/>
-        <circle cx="124.2" cy="101.9" r="2.6" fill="#3E1B12"/>
-        <circle cx="136.2" cy="101.9" r="2.6" fill="#3E1B12"/>
-        <circle cx="148.2" cy="101.9" r="2.6" fill="#3E1B12"/>
-        <circle cx="129.8" cy="99.1" r="2.6" fill="#3E1B12"/>
-        <circle cx="141.8" cy="99.1" r="2.6" fill="#3E1B12"/>
-        <circle cx="153.8" cy="99.1" r="2.6" fill="#3E1B12"/>
-
-        <!-- Torre central: 4 ladrillos apilados -->
-        <polygon points="94,84 108,77 108,97 94,104" fill="#7A2818"/>
-        <rect x="50" y="84" width="44" height="20" fill="#8C2F1E"/>
-
-        <polygon points="94,62 108,55 108,75 94,82" fill="#7A2818"/>
-        <rect x="50" y="62" width="44" height="20" fill="#B23E28"/>
-
-        <polygon points="94,40 108,33 108,53 94,60" fill="#7A2818"/>
-        <rect x="50" y="40" width="44" height="20" fill="#8C2F1E"/>
-
-        <polygon points="94,18 108,11 108,31 94,38" fill="#7A2818"/>
-        <rect x="50" y="18" width="44" height="20" fill="#B23E28"/>
-        <polygon points="50,18 94,18 108,11 64,11" fill="#C9946F"/>
-        <circle cx="63.0" cy="15.9" r="2.6" fill="#3E1B12"/>
-        <circle cx="76.2" cy="15.9" r="2.6" fill="#3E1B12"/>
-        <circle cx="89.4" cy="15.9" r="2.6" fill="#3E1B12"/>
-        <circle cx="68.6" cy="13.1" r="2.6" fill="#3E1B12"/>
-        <circle cx="81.8" cy="13.1" r="2.6" fill="#3E1B12"/>
-        <circle cx="95.0" cy="13.1" r="2.6" fill="#3E1B12"/>
-
-        <!-- Líneas de mortero de la torre -->
-        <rect x="50" y="82" width="44" height="2" fill="#EAE3D4"/>
-        <rect x="50" y="60" width="44" height="2" fill="#EAE3D4"/>
-        <rect x="50" y="38" width="44" height="2" fill="#EAE3D4"/>
-
-        <!-- Ladrillo suelto izquierdo (con huecos, al frente) -->
-        <polygon points="44,98 58,91 58,111 44,118" fill="#7A2818"/>
-        <rect x="4" y="98" width="40" height="20" fill="#B23E28"/>
-        <polygon points="4,98 44,98 58,91 18,91" fill="#DDB08A"/>
-        <circle cx="16.2" cy="95.9" r="2.4" fill="#3E1B12"/>
-        <circle cx="28.2" cy="95.9" r="2.4" fill="#3E1B12"/>
-        <circle cx="40.2" cy="95.9" r="2.4" fill="#3E1B12"/>
-        <circle cx="21.8" cy="93.1" r="2.4" fill="#3E1B12"/>
-        <circle cx="33.8" cy="93.1" r="2.4" fill="#3E1B12"/>
-        <circle cx="45.8" cy="93.1" r="2.4" fill="#3E1B12"/>
-      </svg>
+    <div class="sb-cta">
+      <!-- Qué se está registrando: cambia el "Registro del mes" y el botón de abajo -->
+      <div class="sb-modo" role="group" aria-label="Qué vas a registrar">
+        <button type="button" class="sb-modo-btn" id="btnModoIngresos" data-modo="ingresos" aria-pressed="true" title="Ver y registrar los ingresos (ventas)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M4.5 19.5h15"/></svg><span>Ingresos</span>
+        </button>
+        <button type="button" class="sb-modo-btn" id="btnModoEgresos" data-modo="egresos" aria-pressed="false" title="Ver y registrar los egresos (pagos y gastos)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4"/><path d="M7.5 8.5 12 4l4.5 4.5"/><path d="M4.5 19.5h15"/></svg><span>Egresos</span>
+        </button>
+      </div>
+      <button class="sb-nuevo" id="btnNuevo">＋ Nuevo ingreso</button>
     </div>
 
-    <div class="topbar-actions">
-      <input type="text" id="inputAutorSesion" class="autor-input" placeholder="Tu nombre (para el historial)"
+    <nav class="sb-nav" aria-label="Secciones y acciones">
+
+      <p class="sb-etiqueta">Ir a (en esta página)</p>
+      <a class="sb-item sb-activo" href="#sec-inicio" data-sec="sec-inicio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></svg><span>Inicio</span></a>
+      <a class="sb-item" href="#sec-ventas" data-sec="sec-ventas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 16h7"/></svg><span>Registro del mes</span></a>
+      <a class="sb-item" href="#sec-resultados" data-sec="sec-resultados"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.5l5.5-5.5 4 4L21 7.5"/><path d="M15 7.5h6v6"/><path d="M3 21h18"/></svg><span>Resultados del mes</span></a>
+      <a class="sb-item" href="#sec-graficos" data-sec="sec-graficos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V11"/><path d="M10 20V5"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg><span>Análisis estadístico</span></a>
+      <a class="sb-item" href="#ngEquilibrio" data-sec="ngEquilibrio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16"/><path d="M5 8h14"/><path d="M5 8 2.5 14a3 3 0 0 0 5 0z"/><path d="M19 8l-2.5 6a3 3 0 0 0 5 0z"/><path d="M8 20h8"/></svg><span>Punto de equilibrio</span></a>
+      <a class="sb-item" href="#ngPlata" data-sec="ngPlata"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="13" rx="2.2"/><path d="M3 10.5h18"/><path d="M15.5 15h2.5"/><path d="M7.5 6.5 9 3.5h6l1.5 3"/></svg><span>Estructura de egresos</span></a>
+      <a class="sb-item" href="#ngClientesAnio" data-sec="ngClientesAnio"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1-4 4.5-6 8-6s7 2 8 6"/></svg><span>Clientes del año</span></a>
+      <a class="sb-item" href="#sec-productos" data-sec="sec-productos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3.5 7.5v9L12 21l8.5-4.5v-9z"/><path d="M3.5 7.5 12 12l8.5-4.5"/><path d="M12 12v9"/></svg><span>Ladrillos vendidos</span></a>
+
+      <p class="sb-etiqueta">Informes</p>
+      <button type="button" class="sb-item" id="btnAbrirInformes" title="Descarga el informe en Word o PDF, o envíalo por correo"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.2"/><path d="m3.5 7 8.5 6.5L20.5 7"/></svg><span>Informes y correo</span></button>
+
+      <p class="sb-etiqueta">Datos</p>
+      <div class="sb-acciones">
+        <div class="dropdown" id="dropdownMasAcciones">
+          <button class="sb-accion sb-toggle sb-accion-destacada" id="btnMasAcciones" aria-haspopup="true" aria-expanded="false" title="Trae tus datos desde Excel o guárdalos en Excel">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v13"/><path d="m3.5 13.5 3.5 3.5 3.5-3.5"/><path d="M17 20V7"/><path d="m13.5 10.5 3.5-3.5 3.5 3.5"/></svg><span>Importar / exportar</span>
+          </button>
+          <div class="dropdown-menu" id="menuMasAcciones" hidden>
+            <p class="dropdown-ayuda">Trae tus datos desde Excel o guárdalos en Excel.</p>
+            <p class="dropdown-grupo dropdown-grupo-ingresos">Ingresos</p>
+            <label class="dropdown-item" for="inputImportarExcel">
+              📥 Importar Excel de ingresos
+            </label>
+            <input type="file" id="inputImportarExcel" accept=".xlsx,.xls" hidden>
+            <button class="dropdown-item" id="btnExportarMes">📊 Exportar mes</button>
+            <button class="dropdown-item" id="btnExportarAnio">📊 Exportar todo el año</button>
+            <div class="dropdown-divider"></div>
+            <p class="dropdown-grupo dropdown-grupo-egresos">Egresos</p>
+            <label class="dropdown-item" for="inputImportarEgresos">
+              📥 Importar Excel de egresos
+            </label>
+            <input type="file" id="inputImportarEgresos" accept=".xlsx,.xls" hidden>
+            <button class="dropdown-item" id="btnExportarMesEgresos">📊 Exportar mes</button>
+            <button class="dropdown-item" id="btnExportarAnioEgresos">📊 Exportar todo el año</button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" id="btnVerHistorial">🕒 Ver historial de cambios</button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item dropdown-item-danger" id="btnBorrarTodo">🗑️ Borrar todos los datos</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sb-acciones">
+        <button class="sb-accion" id="btnActivarSync" title="Ingresos: elige un archivo Excel que se actualizará solo cada vez que agregues, edites o borres un ingreso">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span>Excel automático · Ingresos</span>
+        </button>
+        <span class="status-badge" id="syncBadge" title="Estado de la sincronización automática del Excel de ingresos">
+          <span class="status-dot"></span><span class="status-text">Excel de ingresos: Inactivo</span>
+        </span>
+        <button class="sb-accion" id="btnActivarSyncEgresos" title="Egresos: elige otro archivo Excel que se actualizará solo cada vez que agregues, edites o borres un egreso. Puede estar activo al mismo tiempo que el de ingresos">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span>Excel automático · Egresos</span>
+        </button>
+        <span class="status-badge" id="syncBadgeEgresos" title="Estado de la sincronización automática del Excel de egresos">
+          <span class="status-dot"></span><span class="status-text">Excel de egresos: Inactivo</span>
+        </span>
+      </div>
+
+      <div class="sb-acciones">
+        <button class="sb-accion" id="btnActivarCarpetaFacturas" title="Ingresos: elige la carpeta con las facturas y boletas XML que emites (ventas); la app la revisa cada 20 segundos y agrega las nuevas como ingresos">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2.5h8a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18z"/></svg><span>Carpeta XML de ingresos</span>
+        </button>
+        <button class="sb-accion" id="btnEscanearAhora" title="Revisar la carpeta de ingresos ahora mismo, sin esperar" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg><span>Escanear ingresos ahora</span>
+        </button>
+        <span class="status-badge" id="badgeCarpetaFacturas" title="Estado de la importación automática de ingresos (XML)">
+          <span class="status-dot"></span><span class="status-text">Ingresos XML: Inactiva</span>
+        </span>
+      </div>
+
+      <p class="sb-etiqueta">Seguridad</p>
+      <div class="sb-acciones">
+        <div class="dropdown" id="dropdownSafebox">
+          <button class="sb-accion sb-toggle" id="btnSafebox" aria-haspopup="true" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.4 3 8 7.5 9.5 4.5-1.5 7.5-5.1 7.5-9.5V6z"/></svg><span>Caja de seguridad</span>
+          </button>
+          <div class="dropdown-menu safebox-menu" id="menuSafebox" hidden>
+            <div class="safebox-menu-row">
+              <div>
+                <strong>Crear copia de seguridad</strong>
+                <p>Descarga un archivo con todos los datos actuales.</p>
+              </div>
+              <button class="btn btn-outline" id="btnCrearRespaldo">Crear copia</button>
+            </div>
+            <div class="safebox-menu-divider"></div>
+            <div class="safebox-menu-row">
+              <div>
+                <strong>Restaurar copia de seguridad</strong>
+                <p id="nombreArchivoRespaldo">Ningún archivo seleccionado.</p>
+              </div>
+              <div class="safebox-row-actions">
+                <label class="btn btn-ghost" for="inputRestaurarRespaldo">Elegir archivo</label>
+                <input type="file" id="inputRestaurarRespaldo" accept="application/json" hidden>
+                <button class="btn btn-outline" id="btnRestaurarRespaldo" disabled>Restaurar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sb-decor" aria-hidden="true">
+      <p class="sb-lema">Cada ladrillo cuenta en grandes proyectos</p>
+      <img src="assets/img/ladrillos-hojas.jpg" alt="" loading="lazy" width="288" height="298">
+    </div>
+  </aside>
+  <div class="sb-fondo" id="sbFondo" hidden></div>
+
+  <div class="main">
+
+    <!-- ===== CABECERA CON LA FOTO DEL PATIO ===== -->
+    <header class="hero" id="sec-inicio">
+      <button type="button" class="tb-menu" id="btnMenuLateral" aria-label="Abrir el menú" aria-controls="sidebar" aria-expanded="false">☰</button>
+      <div class="hero-foto" aria-hidden="true"></div>
+      <div class="hero-texto">
+        <p class="hero-hola">Bienvenido al sistema</p>
+        <h1 class="hero-titulo">Control de Ventas<br>y Despachos</h1>
+        <p class="hero-sub">CRF &amp; LADRILLOS S.A.C. <span>·</span> Gestión eficiente, mejores resultados</p>
+      </div>
+
+      <div class="hero-barra">
+        <button type="button" class="hero-informe" id="btnInformeRapido" title="Descargar el informe en Word o enviarlo por correo">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.2"/><path d="m3.5 7 8.5 6.5L20.5 7"/></svg>
+          <span>Informe</span>
+        </button>
+        <div class="hero-mes-caja">
+          <button type="button" class="hero-mes" id="btnMesHero" aria-haspopup="true" aria-expanded="false" title="Elegir el mes">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+            <span id="heroMesTexto">Mes</span>
+          </button>
+          <div class="hero-mes-panel" id="heroMesPanel" hidden>
+            <!-- ===== PESTAÑAS DE MES (las mismas de siempre, ahora dentro del selector) ===== -->
+            <nav class="month-tabs" id="monthTabs" aria-label="Selector de mes"></nav>
+          </div>
+        </div>
+      </div>
+
+      <!-- Campo del nombre para el historial: ya no se muestra, pero script.js lo necesita para funcionar -->
+      <input type="text" id="inputAutorSesion" class="autor-input" placeholder="Tu nombre (para el historial)" hidden
         title="Se guarda junto a cada cambio que hagas, solo como referencia interna. No es una contraseña ni protege nada — cualquiera puede escribir cualquier nombre.">
-      <span class="status-badge" id="syncBadge" title="Estado de la sincronización automática con Excel">
-        <span class="status-dot"></span><span class="status-text">Excel automático: Inactivo</span>
-      </span>
-      <span class="status-badge" id="badgeCarpetaFacturas" title="Estado de la importación automática de facturas XML">
-        <span class="status-dot"></span><span class="status-text">Carpeta de facturas XML: Inactiva</span>
-      </span>
-    </div>
-  </header>
+    </header>
 
-  <!-- ===== PESTAÑAS DE MES ===== -->
-  <nav class="month-tabs" id="monthTabs" aria-label="Selector de mes"></nav>
+    <div class="content">
 
-  <!-- ===== BARRA DE ESTADÍSTICAS ===== -->
-  <section class="stats" id="statsRow"></section>
+      <!-- Aviso cuando el mes elegido todavía no tiene datos (lo llena negocio.js) -->
+      <div class="ng-aviso ng-aviso-dup" id="dbAvisoDuplicados" role="alert" hidden></div>
+      <div class="ng-aviso" id="dbAvisoMes" role="status" hidden></div>
 
-  <!-- ===== BARRA DE ACCIONES ===== -->
-  <section class="toolbar">
-    <button class="btn btn-primary" id="btnNuevo">＋ Nuevo registro</button>
-    <button class="btn btn-outline" id="btnActivarSync" title="Elige un archivo Excel que se actualizará solo cada vez que agregues, edites o borres un registro">
-      🔗 Excel automático
-    </button>
-    <button class="btn btn-outline" id="btnActivarCarpetaFacturas" title="Elige una carpeta con tus facturas en XML; la app la revisa cada 20 segundos y agrega las nuevas automáticamente">
-      📂 Importar carpeta facturas (XML)
-    </button>
-    <button class="btn btn-ghost" id="btnEscanearAhora" title="Revisar la carpeta ahora mismo, sin esperar" hidden>
-      🔄 Escanear ahora
-    </button>
-    <div class="toolbar-spacer"></div>
+      <!-- ===== 5 INDICADORES DEL MES: lo más importante de un vistazo (los llena negocio.js) ===== -->
+      <section id="dbKpis" aria-label="Mapa de mi negocio"></section>
 
-    <div class="dropdown" id="dropdownSafebox">
-      <button class="btn btn-outline" id="btnSafebox" aria-haspopup="true" aria-expanded="false">
-        🛡️ Caja de seguridad ▾
-      </button>
-      <div class="dropdown-menu safebox-menu" id="menuSafebox" hidden>
-        <div class="safebox-menu-row">
-          <div>
-            <strong>Crear copia de seguridad</strong>
-            <p>Descarga un archivo con todos los datos actuales.</p>
+      <!-- ===== GRÁFICO PRINCIPAL DEL INICIO: ingresos y egresos de los últimos 6 meses (lo llena negocio.js) ===== -->
+      <article class="card ng-card ng-seis" data-ng="seis">
+        <header class="card-cab">
+          <span class="card-ico ng-ico ng-ico-ventas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg></span>
+          <div class="card-titulos">
+            <h2 class="card-titulo">Ventas de los últimos meses</h2>
+            <p class="card-sub" id="ngSeisSub">¿Tu negocio va mejorando o empeorando?</p>
           </div>
-          <button class="btn btn-outline" id="btnCrearRespaldo">Crear copia</button>
-        </div>
-        <div class="safebox-menu-divider"></div>
-        <div class="safebox-menu-row">
-          <div>
-            <strong>Restaurar copia de seguridad</strong>
-            <p id="nombreArchivoRespaldo">Ningún archivo seleccionado.</p>
-          </div>
-          <div class="safebox-row-actions">
-            <label class="btn btn-ghost" for="inputRestaurarRespaldo">Elegir archivo</label>
-            <input type="file" id="inputRestaurarRespaldo" accept="application/json" hidden>
-            <button class="btn btn-outline" id="btnRestaurarRespaldo" disabled>Restaurar</button>
-          </div>
-        </div>
-      </div>
-    </div>
+          <div class="ng-seis-chips" id="ngSeisChips"></div>
+        </header>
+        <div class="ng-respuesta" id="ngSeisResp" aria-live="polite"></div>
+        <div class="db-lienzo ng-lienzo"><canvas id="ngSeisCanvas" aria-label="Ingresos y egresos de cada mes del año" role="img"></canvas></div>
+        <div class="md-pie-g1" id="ngSeisPie"></div>
+      </article>
 
-    <div class="dropdown" id="dropdownMasAcciones">
-      <button class="btn btn-outline" id="btnMasAcciones" aria-haspopup="true" aria-expanded="false">
-        Más acciones ▾
-      </button>
-      <div class="dropdown-menu" id="menuMasAcciones" hidden>
-        <label class="dropdown-item" for="inputImportarExcel">
-          📥 Importar Excel
-        </label>
-        <input type="file" id="inputImportarExcel" accept=".xlsx,.xls" hidden>
-        <button class="dropdown-item" id="btnExportarMes">📊 Exportar mes</button>
-        <button class="dropdown-item" id="btnExportarAnio">📊 Exportar todo el año</button>
-        <div class="dropdown-divider"></div>
-        <button class="dropdown-item" id="btnVerHistorial">🕒 Ver historial de cambios</button>
-        <div class="dropdown-divider"></div>
-        <button class="dropdown-item dropdown-item-danger" id="btnBorrarTodo">🗑️ Borrar todos los datos</button>
-      </div>
-    </div>
-  </section>
+      <!-- Estadísticas de siempre: script.js las sigue llenando; sus datos ya se ven en los 5 indicadores de arriba -->
+      <section class="stats" id="statsRow" hidden></section>
 
-  <!-- ===== TABLA ===== -->
-  <section class="table-wrap">
+      <!-- ===== REGISTRO DEL MES (lo principal: aquí se registra y se revisa cada venta) ===== -->
+      <article class="card card-tabla" id="sec-ventas">
+        <header class="card-cab">
+          <span class="card-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 16h7"/></svg></span>
+          <div class="card-titulos">
+            <h2 class="card-titulo">Registro del mes <span class="modo-pill modo-pill-ingresos" id="pillModoRegistro">Ingresos</span></h2>
+            <p class="card-sub" id="subRegistro">Cada venta con su detalle. Usa «Nuevo ingreso» del menú para agregar una.</p>
+          </div>
+          <div class="reg-resumen" id="resumenRegistro" aria-live="polite"></div>
+        </header>
+        <section class="table-wrap">
     <table id="tablaRegistros">
       <thead>
         <tr id="tablaHead"></tr>
@@ -163,98 +251,148 @@
       <tbody id="tablaBody"></tbody>
     </table>
     <p class="empty-state" id="emptyState" hidden>
-      No hay registros en este mes todavía. Usa <strong>“＋ Nuevo registro”</strong> para agregar el primero.
+      No hay ingresos en este mes todavía. Usa <strong>“＋ Nuevo ingreso”</strong> para agregar el primero.
     </p>
   </section>
+      </article>
 
-  <!-- ===== FASE 1 (UI): PANEL DE CONTROL INDUSTRIAL — 6 gráficos compactos ===== -->
-  <section class="control-panel-section">
-    <h2 class="control-panel-title">⚙ Panel de control — Indicadores operativos</h2>
-    <p class="control-panel-subtitle">Haz clic en cualquier tarjeta para voltearla y ver el detalle. Con todos los registros guardados.</p>
+      <!-- ===== FILA DE 3 GRÁFICAS: ¿gané o perdí?, ¿cuánto me falta?, ¿quién me compra? (las llena negocio.js) ===== -->
+      <section class="fila-graficas" id="sec-resultados" aria-label="Resultados del mes">
+
+        <article class="card gf-barras ng-card" data-ng="ganancia">
+          <header class="card-cab">
+            <span data-ico="ventas"></span>
+            <div class="card-titulos">
+              <h2 class="card-titulo">Ventas brutas del mes</h2>
+              <p class="card-sub" id="ngGananciaSub">Ingresos frente a egresos</p>
+            </div>
+          </header>
+          <div class="ng-respuesta" id="ngGananciaResp" aria-live="polite"></div>
+          <div class="db-lienzo ng-lienzo"><canvas id="ngGananciaCanvas" aria-label="Ingresos y egresos de cada mes; el área entre las líneas es la ganancia o la pérdida" role="img"></canvas></div>
+          <div class="card-leyenda" id="ngGananciaLeyenda"></div>
+          <div class="ng-pie-lectura" id="ngGananciaLectura"></div>
+        </article>
+
+        <article class="card ng-card" data-ng="falta">
+          <header class="card-cab">
+            <span data-ico="resmes"></span>
+            <div class="card-titulos">
+              <h2 class="card-titulo">Resultado neto mes a mes</h2>
+              <p class="card-sub" id="ngFaltaSub">¿Tus ventas alcanzan a pagar tus gastos?</p>
+            </div>
+          </header>
+          <div class="ng-respuesta" id="ngFaltaResp" aria-live="polite"></div>
+          <div class="ng-crece"><canvas id="ngFaltaCanvas" aria-label="Lo que vendiste frente a lo que gastaste, y lo que sobra o falta" role="img"></canvas></div>
+          <div class="ng-lienzo" id="ngFaltaBarras" aria-label="Barras de cobertura de egresos, margen y equilibrio"></div>
+          <div class="ng-pie-lectura" id="ngFaltaLectura"></div>
+        </article>
+
+        <article class="card ng-card" data-ng="clientes">
+          <header class="card-cab">
+            <span data-ico="cliconc"></span>
+            <div class="card-titulos">
+              <h2 class="card-titulo">Concentración de clientes</h2>
+              <p class="card-sub" id="ngClientesSub">Peso de cada cliente en tus ventas</p>
+            </div>
+          </header>
+          <div class="ng-respuesta" id="ngClientesResp" aria-live="polite"></div>
+          <div class="ng-dona-fila ng-lienzo" id="ngClientesFila">
+            <div class="ng-dona"><canvas id="ngClientesCanvas" aria-label="Peso de tus clientes que más compraron en el mes" role="img"></canvas></div>
+            <ol class="ng-rank" id="ngClientesLista"></ol>
+          </div>
+          <div class="card-leyenda" id="ngClientesLeyenda"></div>
+          <div class="ng-pie-lectura" id="ngClientesLectura"></div>
+        </article>
+
+      </section>
+
+  <!-- ===== PANEL DE CONTROL: 3 gráficos en medallones, cada uno abre su ventana de análisis ===== -->
+  <section class="control-panel-section" id="sec-graficos">
+    <h2 class="control-panel-title">Mis gráficos</h2>
+    <p class="control-panel-subtitle md-oculto">Tres preguntas simples sobre tus números: ¿se parecen tus montos?, ¿cambian mucho tus meses? y ¿cómo estuvo tu mes frente a los demás? Toca un círculo; dentro, «Más detalles» muestra los cálculos.</p>
 
     <div class="control-panel-grid">
 
-      <button class="flip-card" id="flipVentasMes" aria-label="Ventas por mes, clic para ver detalle">
+      <button class="flip-card" id="flipVentasMes" data-tarjeta="ventas-mes" aria-label="¿Mis ventas y pagos son parecidos? Clic para ver el análisis">
         <div class="flip-card-inner">
           <div class="flip-card-face flip-card-front">
-            <span class="cp-label">VENTAS/MES</span>
-            <canvas id="miniChartVentasMes" width="90" height="46"></canvas>
+            <div class="cp-medallon"><div class="cp-lienzo"><canvas id="miniChartVentasMes"></canvas></div></div>
+            <span class="cp-label" id="cpVentasMesTitulo">Ventas y pagos</span>
+            <span class="cp-sub md-oculto">Compara cada venta y pago con lo normal</span>
             <span class="cp-value" id="cpVentasMesValor">—</span>
           </div>
           <div class="flip-card-face flip-card-back" id="cpVentasMesBack"></div>
         </div>
       </button>
 
-      <button class="flip-card" id="flipFormaPago" aria-label="Adelanto vs al contado, clic para ver detalle">
+      <button class="flip-card" id="flipFormaPago" data-tarjeta="forma-pago" aria-label="Estabilidad de tus ingresos y egresos (desviación estándar): ¿mis meses cambian mucho? Clic para ver el análisis">
         <div class="flip-card-inner">
           <div class="flip-card-face flip-card-front">
-            <span class="cp-label">ADEL./CONT.</span>
-            <canvas id="miniChartFormaPago" width="70" height="70"></canvas>
+            <div class="cp-medallon"><div class="cp-lienzo"><canvas id="miniChartFormaPago"></canvas></div></div>
+            <span class="cp-label" id="cpFormaPagoTitulo">Cambio de mis meses</span>
+            <span class="cp-sub md-oculto">¿Mis meses cambian mucho?</span>
             <span class="cp-value" id="cpFormaPagoValor">—</span>
           </div>
           <div class="flip-card-face flip-card-back" id="cpFormaPagoBack"></div>
         </div>
       </button>
 
-      <button class="flip-card" id="flipTopDeudor" aria-label="Cliente con más deuda, clic para ver detalle">
+      <!-- Antes "Cliente con más deuda": ahora "Medidas de posición" (se conservan los id); abre su ventana (posicion.js) -->
+      <button class="flip-card" id="flipTopDeudor" data-tarjeta="top-deudor" aria-label="Mi mes frente a los demás (medidas de posición: cuartiles, quintiles y percentiles), clic para ver el análisis">
         <div class="flip-card-inner">
           <div class="flip-card-face flip-card-front">
-            <span class="cp-label">TOP DEUDOR</span>
-            <span class="cp-icon">⚠</span>
-            <span class="cp-value cp-value-small" id="cpTopDeudorValor">—</span>
+            <div class="cp-medallon"><div class="cp-lienzo"><canvas id="miniChartTopDeudor"></canvas></div></div>
+            <span class="cp-label" id="cpTopDeudorTitulo">Puesto de mi mes</span>
+            <span class="cp-sub md-oculto">¿Qué es un mes bueno o flojo?</span>
+            <span class="cp-value" id="cpTopDeudorValor">—</span>
           </div>
           <div class="flip-card-face flip-card-back" id="cpTopDeudorBack"></div>
         </div>
       </button>
 
-      <button class="flip-card" id="flipTopRepresentante" aria-label="Mejor representante, clic para ver detalle">
-        <div class="flip-card-inner">
-          <div class="flip-card-face flip-card-front">
-            <span class="cp-label">TOP VENDEDOR</span>
-            <span class="cp-icon">🏆</span>
-            <span class="cp-value cp-value-small" id="cpTopRepresentanteValor">—</span>
-          </div>
-          <div class="flip-card-face flip-card-back" id="cpTopRepresentanteBack"></div>
-        </div>
-      </button>
-
-      <button class="flip-card" id="flipTopCodigo" aria-label="Código de ladrillo más vendido, clic para ver detalle">
-        <div class="flip-card-inner">
-          <div class="flip-card-face flip-card-front">
-            <span class="cp-label">TOP PRODUCTO</span>
-            <span class="cp-icon">▦</span>
-            <span class="cp-value cp-value-small" id="cpTopCodigoValor">—</span>
-          </div>
-          <div class="flip-card-face flip-card-back" id="cpTopCodigoBack"></div>
-        </div>
-      </button>
-
-      <button class="flip-card" id="flipBancos" aria-label="Entidad bancaria principal, clic para ver detalle">
-        <div class="flip-card-inner">
-          <div class="flip-card-face flip-card-front">
-            <span class="cp-label">BANCO/EFECT.</span>
-            <canvas id="miniChartBancos" width="70" height="70"></canvas>
-            <span class="cp-value" id="cpBancosValor">—</span>
-          </div>
-          <div class="flip-card-face flip-card-back" id="cpBancosBack"></div>
-        </div>
-      </button>
-
     </div>
   </section>
 
-  <!-- ===== INDICADORES CLAVE ===== -->
-  <section class="kpi-section">
-    <h2 class="kpi-title">📌 Indicadores clave del negocio</h2>
-    <p class="kpi-subtitle">Se actualizan solos con cada registro que agregues, edites o borres.</p>
+
+
+  <!-- ===== SALUD DE TU NEGOCIO (antes "Indicadores clave del negocio"; la llena negocio.js) ===== -->
+  <section class="kpi-section" id="sec-indicadores">
+    <h2 class="kpi-title">Salud de tu negocio</h2>
+    <p class="kpi-subtitle md-oculto">Tres lecturas de tu negocio con tus ingresos y egresos: el punto de equilibrio, cómo se reparten tus gastos y quiénes sostienen tus ventas. Se actualizan solas con cada registro.</p>
 
     <div class="kpi-grid">
-      <div class="kpi-card" id="kpiTicketPromedio"></div>
-      <div class="kpi-card" id="kpiVariacionDetallada"></div>
-      <div class="kpi-card" id="kpiRachaVentas"></div>
+      <div class="kpi-card" id="ngEquilibrio"></div>
+      <div class="kpi-card" id="ngPlata"></div>
+      <div class="kpi-card" id="ngClientesAnio"></div>
     </div>
   </section>
 
+      <!-- ===== LADRILLOS CERÁMICOS MÁS VENDIDOS ===== -->
+      <article class="card card-productos" id="sec-productos">
+        <header class="card-cab">
+          <span class="card-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3.5 7.5v9L12 21l8.5-4.5v-9z"/><path d="M3.5 7.5 12 12l8.5-4.5"/><path d="M12 12v9"/></svg></span>
+          <div class="card-titulos">
+            <h2 class="card-titulo">Ladrillos cerámicos más vendidos</h2>
+            <p class="card-sub md-oculto">Según todas tus ventas · el precio cambia con el volumen de cada venta</p>
+          </div>
+        </header>
+        <div class="pd-resumen" id="prodResumen"></div>
+        <ul class="pd-lista" id="prodLista"></ul>
+      </article>
+
+      <!-- ===== PIE DE PÁGINA ===== -->
+      <footer class="pie">
+        <div class="pie-items">
+          <!-- Sello: solo las líneas del toro y la palabra CRF del logo, sin su fondo -->
+          <i class="pie-sello" role="img" aria-label="Sello de CRF &amp; LADRILLOS"></i>
+          <span class="pie-item">CRF &amp; LADRILLOS S.A.C.</span>
+          <span class="pie-item"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11"/><path d="M12 20V5"/><path d="M19 20v-7"/></svg>Gestión de ventas</span>
+        </div>
+        <a class="pie-pildora" href="vista-usuario.html" title="Ver lo que verá el usuario o comprador"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg><span>Vista de usuario</span><b>›</b></a>
+      </footer>
+
+    </div>
+  </div>
 </div>
 
 <!-- ===== MODAL: NUEVO / EDITAR REGISTRO ===== -->
@@ -357,11 +495,70 @@
   </div>
 </div>
 
+<!-- ===== MODAL: NUEVO / EDITAR EGRESO (lo maneja egresos.js) ===== -->
+<div class="modal-overlay" id="modalEgreso" hidden>
+  <div class="modal modal-egreso">
+    <div class="modal-header">
+      <h2 id="modalEgresoTitulo">Nuevo egreso</h2>
+      <button class="modal-close" id="cerrarModalEgreso" aria-label="Cerrar">✕</button>
+    </div>
+    <form id="formEgreso" class="modal-body form-grid">
+      <input type="hidden" id="campoEgresoId">
+
+      <fieldset class="form-section span-2">
+        <legend>1 · Fecha y descripción</legend>
+        <div class="form-section-grid">
+          <label><span>Fecha de egreso <span class="req">*</span></span>
+            <input type="date" id="campoFechaEgreso" required>
+          </label>
+          <label><span>Descripción <span class="req">*</span></span>
+            <input type="text" id="campoDescripcionEgreso" list="listaDescripcionEgreso" required autocomplete="off" placeholder="Ej: Pago de planilla, Compra de aserrín">
+            <datalist id="listaDescripcionEgreso"></datalist>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-section span-2">
+        <legend>2 · Monto y pagos</legend>
+        <p class="eg-aviso-form" id="avisoEgreso" hidden></p>
+        <div class="form-section-grid">
+          <label><span>Monto (S/) <span class="req">*</span></span>
+            <input type="number" id="campoMontoEgreso" min="0.01" step="0.01" required>
+          </label>
+          <label>Pagos
+            <input type="number" id="campoPagosEgreso" min="1" step="1" value="1">
+            <small id="ayudaPagosEgreso">Se completa solo con la cantidad de beneficiarios. Puedes cambiarlo.</small>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-section span-2">
+        <legend>3 · Beneficiarios</legend>
+        <label class="benef-etiqueta" for="campoBeneficiario">Nombres de las personas o empresas que reciben el pago</label>
+        <div class="benef-campo" id="benefCampo">
+          <ul class="benef-chips" id="benefChips" aria-label="Beneficiarios agregados"></ul>
+          <input type="text" id="campoBeneficiario" list="listaBeneficiarios" autocomplete="off" placeholder="Escribe un nombre y pulsa Enter">
+          <datalist id="listaBeneficiarios"></datalist>
+        </div>
+        <div class="benef-pie">
+          <p class="benef-ayuda"><strong id="benefContador">Sin beneficiarios</strong> · Pulsa <kbd>Enter</kbd> o coma para agregar otro. Puedes pegar varios nombres separados por comas.</p>
+          <button type="button" class="btn btn-ghost benef-agregar" id="btnAgregarBeneficiario">＋ Agregar</button>
+        </div>
+      </fieldset>
+
+      <div class="modal-footer span-2">
+        <button type="button" class="btn btn-ghost" id="cancelarEgreso">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar egreso</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- ===== MODAL: DECISIÓN DE IMPORTACIÓN ===== -->
 <div class="modal-overlay" id="modalImportar" hidden>
   <div class="modal modal-small">
     <div class="modal-header">
-      <h2>Importar registros</h2>
+      <h2 id="tituloImportar">Importar registros</h2>
     </div>
     <div class="modal-body">
       <p id="textoImportarResumen">¿Deseas agregar estos registros a los datos existentes?</p>
@@ -381,9 +578,15 @@
       <div class="modal-danger-icon">⚠️</div>
       <h2 class="modal-danger-title">¿Borrar todos los datos?</h2>
       <p class="modal-danger-text">
-        Esto eliminará <strong>todos los registros de todos los meses</strong> guardados en esta aplicación.
+        Elige qué borrar. Se eliminarán <strong>los registros de todos los meses</strong> guardados en esta aplicación.
         Esta acción no se puede deshacer.
       </p>
+      <fieldset class="borrar-alcance">
+        <legend>¿Qué quieres borrar?</legend>
+        <label><input type="radio" name="alcanceBorrado" value="todo" checked> Ingresos y egresos (todo)</label>
+        <label><input type="radio" name="alcanceBorrado" value="ingresos"> Solo los ingresos</label>
+        <label><input type="radio" name="alcanceBorrado" value="egresos"> Solo los egresos</label>
+      </fieldset>
       <p class="modal-danger-tip">💡 Si tienes dudas, cierra esta ventana y crea antes una copia de seguridad.</p>
       <div class="modal-footer modal-footer-stack">
         <button class="btn btn-danger" id="btnConfirmarBorrarTodo">Sí, borrar todo</button>
@@ -412,11 +615,126 @@
   </div>
 </div>
 
+<!-- ===== VENTANA: INFORMES Y CORREO (la maneja informes.js) ===== -->
+<div class="modal-overlay" id="modalInforme" hidden>
+  <div class="modal inf-modal" role="dialog" aria-modal="true" aria-labelledby="infTitulo">
+    <div class="modal-header inf-cabecera">
+      <div class="inf-cab-titulos">
+        <span class="inf-cab-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 16h7"/></svg></span>
+        <div>
+          <h2 id="infTitulo">Informes y correo</h2>
+          <p>Elige el informe y los meses, revísalo en la vista previa y envíalo.</p>
+        </div>
+      </div>
+      <div class="inf-badge" id="infBadge" aria-live="polite" title="Meses y tipo del informe que se va a descargar o enviar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+        <div><b id="infBadgeMes">—</b><small id="infBadgeDet">—</small></div>
+      </div>
+      <button class="modal-close" id="cerrarModalInforme" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="modal-body inf-cuerpo">
+      <div class="inf-col">
+        <section class="inf-sec" aria-labelledby="infSec1">
+          <header class="inf-sec-cab"><span class="inf-sec-num">1</span><div><h3 id="infSec1">Tipo de informe</h3><p>Los dos usan solo los datos de tus Excel.</p></div></header>
+          <div class="inf-tipos" role="radiogroup" aria-label="Tipo de informe">
+            <label class="inf-tipo">
+              <input type="radio" name="infTipo" value="general" checked>
+              <span class="inf-tipo-cuerpo">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 13h7M9 17h5"/></svg>
+                <strong>Informe general</strong>
+                <small>Resumen ejecutivo para directorio: cifras clave de cada mes frente a su mes anterior, gráficos y conclusiones.</small>
+              </span>
+            </label>
+            <label class="inf-tipo">
+              <input type="radio" name="infTipo" value="detallado">
+              <span class="inf-tipo-cuerpo">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h11l3 3v15H5z"/><path d="M8 8h8M8 12h8M8 16h8"/><path d="M3 7v14h2"/></svg>
+                <strong>Informe detallado</strong>
+                <small>Investigación completa: 6 pasos por mes frente al mes anterior, ecuaciones, estadística, modelo, limitaciones y anexos.</small>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <section class="inf-sec" aria-labelledby="infSec2">
+          <header class="inf-sec-cab"><span class="inf-sec-num">2</span><div><h3 id="infSec2">Meses del informe</h3><p>Toca los meses que quieres incluir.</p></div></header>
+          <div class="inf-periodo" id="infPeriodoCaja" aria-live="polite"></div>
+        </section>
+      </div>
+
+      <div class="inf-col">
+        <section class="inf-sec inf-sec-destacada" aria-labelledby="infSec3">
+          <header class="inf-sec-cab"><span class="inf-sec-num">3</span><div><h3 id="infSec3">Revisa y descarga</h3><p>Así queda cada mes y lo que trae el informe.</p></div></header>
+          <div id="infResumen" class="inf-resumen" aria-live="polite"></div>
+          <button type="button" class="btn btn-accent inf-previa-boton" id="infVistaPrevia">👁 Ver la vista previa del informe</button>
+          <div class="inf-fila">
+            <button type="button" class="btn btn-primary" id="infDescargar">⬇ Descargar Word</button>
+            <button type="button" class="btn btn-primary inf-pdf" id="infPdf">⬇ Descargar PDF</button>
+          </div>
+        </section>
+
+        <section class="inf-sec" aria-labelledby="infSec4">
+          <header class="inf-sec-cab"><span class="inf-sec-num">4</span><div><h3 id="infSec4">Envía por correo</h3><p>Se abre tu correo con el mensaje listo; adjuntas el archivo descargado.</p></div></header>
+          <div class="inf-form">
+            <label>Para
+              <input type="text" id="infPara" class="inf-campo" placeholder="correo@empresa.com (varios, separados por coma)" autocomplete="email" inputmode="email">
+            </label>
+            <label>Asunto
+              <input type="text" id="infAsunto" class="inf-campo" autocomplete="off">
+            </label>
+            <label>Mensaje
+              <textarea id="infMensaje" class="inf-campo" rows="6"></textarea>
+            </label>
+            <button type="button" class="inf-enlace" id="infRestablecer">Volver al mensaje automático</button>
+          </div>
+          <div class="inf-fila">
+            <button type="button" class="btn btn-outline" id="infCorreo">✉ Abrir mi correo</button>
+            <button type="button" class="btn btn-outline" id="infGmail">Abrir en Gmail</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== VISTA PREVIA DEL INFORME (la llena informes.js) ===== -->
+<div class="inf-previa" id="infPrevia" role="dialog" aria-modal="true" aria-labelledby="infPreviaTitulo" hidden>
+  <div class="inf-previa-barra">
+    <div><small>Vista previa · así saldrá tu informe</small><b id="infPreviaTitulo">Informe</b></div>
+    <div class="inf-previa-acciones">
+      <button type="button" class="btn btn-primary" id="infPreviaWord">⬇ Word</button>
+      <button type="button" class="btn btn-primary inf-pdf" id="infPreviaPdf">⬇ PDF</button>
+      <button type="button" class="btn btn-ghost inf-previa-x" id="infPreviaCerrar">✕ Cerrar</button>
+    </div>
+  </div>
+  <div class="inf-previa-doc" id="infPreviaDoc"></div>
+</div>
+
 <!-- ===== CONTENEDOR DE TOASTS ===== -->
 <div class="toast-container" id="toastContainer"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="script.js"></script>
+<script src="tooltip-lateral.js?v=20261036"></script>
+<script src="script.js?v=20261036"></script>
+<!-- Cálculos compartidos de ingresos y egresos (una sola fuente para todo el panel y las ventanas) -->
+<script src="analitica.js?v=20261036"></script>
+<!-- Evita sumar dos veces el mismo Excel y corrige datos repetidos -->
+<script src="duplicados.js?v=20261036"></script>
+<script src="ventas-mes.js?v=20261036"></script>
+<script src="iconos.js?v=20261036"></script>
+<script src="esfera.js?v=20261036"></script>
+<script src="negocio.js?v=20261036"></script>
+<script src="dashboard.js?v=20261036"></script>
+<script src="egresos.js?v=20261036"></script>
+<script src="simple.js?v=20261036"></script>
+<script src="parejos.js?v=20261036"></script>
+<script src="estabilidad.js?v=20261036"></script>
+<script src="posicion.js?v=20261036"></script>
+<!-- Informe general y detallado en Word + envío por correo -->
+<script src="informes.js?v=20261036"></script>
+<script src="ubicacion.js?v=20261036"></script>
+<script src="mis-graficos.js?v=20261036"></script>
 </body>
 </html>

@@ -1,0 +1,224 @@
+/* ==========================================================================
+   esfera.css — «Mapa de mi negocio» (esfera.js)
+   La esfera y sus datos flotan directo sobre el fondo de la página (sin
+   cuadro alrededor). Nombres nuevos con "esf-".
+   ========================================================================== */
+
+.esf {
+  position: relative;
+  margin-bottom: 16px;
+  padding: 10px 6px 12px;
+  color: #3B2F2A;
+  background: none;
+  isolation: isolate;
+}
+
+.esf-cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; position: relative; z-index: 2; }
+.esf-titulo { margin: 0; font: 600 20px/1.2 var(--font-display); color: #3B2F2A; }
+.esf-sub { margin: 4px 0 0; font-size: 13px; color: #5A4438; }
+.esf-sub b { color: #B4532A; font-weight: 700; }
+.esf-tip {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(96, 64, 56, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  font-size: 11.5px;
+  color: #fff;
+}
+
+/* ---------- Escena: entradas | esfera | salidas ---------- */
+.esf-escena {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(210px, 250px) minmax(0, 1fr) minmax(250px, 300px);
+  gap: 0 20px;
+  min-height: 450px;
+  margin-top: 6px;
+}
+
+.esf-lienzo { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+
+.esf-col { position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: space-around; gap: 14px; padding: 8px 0; }
+.esf-col-out { justify-content: space-between; gap: 10px; }
+
+.esf-centro { position: relative; z-index: 1; display: grid; place-items: center; min-height: 300px; }
+
+.esf-nucleo {
+  width: var(--esf-d, min(200px, 92%));
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  cursor: grab;              /* se arrastra para girar la esfera */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  text-align: center;
+  padding: 0;
+}
+.esf-nucleo.esf-agarrada { cursor: grabbing; }
+.esf-nucleo:focus-visible { outline: 3px solid #E5812F; outline-offset: 4px; }
+.esf-nucleo-mes { font: 600 11px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255, 255, 255, 0.78); }
+.esf-nucleo-texto { font: 700 26px/1.1 var(--font-display); letter-spacing: 0.01em; }
+.esf-nucleo small { font-size: 10.5px; color: rgba(255, 255, 255, 0.6); }
+
+/* ---------- Nodos (círculos con información) ---------- */
+.esf-nodo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px 10px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: linear-gradient(135deg, rgba(84, 58, 60, 0.86), rgba(66, 44, 52, 0.76));
+  box-shadow: 0 8px 22px rgba(120, 60, 30, 0.2);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.esf-nodo:hover, .esf-nodo:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--c1);
+  box-shadow: 0 0 0 1px var(--c1), 0 10px 30px color-mix(in srgb, var(--c1) 38%, transparent);
+  outline: none;
+}
+
+.esf-ico {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  box-shadow: 0 0 20px color-mix(in srgb, var(--c1) 60%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.esf-ico svg { width: 23px; height: 23px; fill: none; stroke: #fff; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; transform-origin: 50% 60%; }
+
+@keyframes esfLatir { 0%, 100% { transform: scale(1); } 40% { transform: scale(1.18); } 70% { transform: scale(0.96); } }
+.esf-nodo:hover .esf-ico svg, .esf-nodo:focus-visible .esf-ico svg { animation: esfLatir 0.9s ease-in-out infinite; }
+
+.esf-txt { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.esf-t { font-size: 12px; font-weight: 500; line-height: 1.25; color: rgba(255, 255, 255, 0.92); }
+.esf-v { font: 700 19px/1.15 var(--font-display); color: #fff; white-space: nowrap; }
+.esf-v.esf-v-texto { font-size: 15px; white-space: normal; line-height: 1.2; }
+.esf-fila { display: flex; align-items: center; flex-wrap: wrap; gap: 3px 7px; margin-top: 2px; }
+.esf-s { font-size: 11px; line-height: 1.3; color: rgba(255, 255, 255, 0.82); }
+.esf-chip {
+  font-style: normal;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--k) 60%, transparent);
+  background: color-mix(in srgb, var(--k) 20%, transparent);
+  color: var(--k);
+  font: 700 10.5px/1.5 var(--font-body);
+  white-space: nowrap;
+}
+.esf-chip[hidden] { display: none; }
+
+/* ---------- Pie: explicación del veredicto ---------- */
+.esf-pie { position: relative; z-index: 2; margin-top: 12px; padding-top: 14px; border-top: 1px solid rgba(140, 80, 40, 0.22); }
+.esf-frase { margin: 0; font-size: 15px; line-height: 1.55; color: #3B2F2A; max-width: 82ch; }
+.esf-pie-fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
+.esf-por-que {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(96, 64, 56, 0.82);
+  color: #fff;
+  font: 600 12.5px var(--font-body);
+  cursor: pointer;
+}
+.esf-por-que:hover { background: rgba(70, 44, 40, 0.92); }
+.esf-por-que:focus-visible { outline: 2px solid #E5812F; outline-offset: 2px; }
+
+.esf-razones { margin-top: 10px; }
+.esf-razones[hidden] { display: none; }
+.esf-lista { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; }
+.esf-lista li { display: flex; gap: 10px; padding: 10px 12px; border-radius: 14px; background: rgba(84, 58, 60, 0.86); border: 1px solid rgba(255, 255, 255, 0.25); }
+.esf-punto { flex: none; width: 10px; height: 10px; margin-top: 5px; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
+.esf-lista b { display: block; font-size: 13px; color: #fff; }
+.esf-lista span { font-size: 12px; line-height: 1.4; color: rgba(255, 255, 255, 0.86); }
+.esf-lista .esf-rv { font-weight: 700; }
+
+/* ---------- Pantallas angostas: se apilan, sin tentáculos ---------- */
+@media (max-width: 900px) {
+  .esf { padding: 8px 0 12px; }
+  .esf-escena { grid-template-columns: minmax(0, 1fr); min-height: 0; gap: 12px; }
+  .esf-centro { order: -1; min-height: 300px; }
+  .esf-col { padding: 0; }
+  .esf-col-in { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .esf-col-out { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .esf-nodo { padding: 9px 12px 9px 9px; }
+  .esf-v { font-size: 17px; }
+}
+@media (max-width: 520px) {
+  .esf-col-in { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .esf-nodo, .esf-nodo:hover { transition: none; transform: none; }
+  .esf-nodo:hover .esf-ico svg { animation: none; }
+}
+
+/* ---------- Centro de la esfera: mes, veredicto y «Toca para ver por qué» bien visibles ---------- */
+.esf-nucleo-mes {
+  font: 700 12.5px var(--font-body);
+  letter-spacing: 0.09em;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95), 0 0 8px rgba(20, 8, 4, 0.85);
+}
+.esf-nucleo-texto { font-size: 29px; }
+.esf-nucleo small {
+  margin-top: 4px;
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: rgba(20, 8, 4, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  font: 600 11.5px var(--font-body);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+.esf-nucleo:hover small, .esf-nucleo:focus-visible small { background: rgba(20, 8, 4, 0.8); }
+
+/* Se quita la aclaración «Toca un círculo para ver su detalle» (el elemento queda oculto) */
+.esf-tip { display: none !important; }
+/* Títulos de los círculos del mapa: más resaltados, con letra de título */
+.esf-t { font-family: var(--font-display, "Poppins", sans-serif); font-size: 13.5px; font-weight: 700; letter-spacing: 0.01em; line-height: 1.2; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
+
+/* «¿Por qué?»: dato puntual y barritas de cada aclaración */
+.esf-lista li > div { flex: 1; min-width: 0; }
+.esf-lista .esf-rz-dato { display: block; margin: 3px 0 6px; font-size: 12.5px; font-weight: 600; color: #fff; }
+.esf-rz-barras { display: grid; gap: 4px; margin: 0 0 6px; }
+.esf-rz-b { display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 8px; }
+.esf-rz-b em { font-style: normal; font-size: 11px; font-weight: 600; color: rgba(255, 255, 255, 0.8); }
+.esf-rz-b small { font-size: 11px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+.esf-rz-b i, .esf-rz-med i { display: block; height: 8px; border-radius: 99px; background: rgba(255, 255, 255, 0.14); overflow: hidden; }
+.esf-rz-b s, .esf-rz-med s { display: block; height: 100%; border-radius: 99px; background: rgba(255, 255, 255, 0.45); text-decoration: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 0 8px rgba(255, 255, 255, 0.18); }
+.esf-rz-med { margin: 0 0 6px; }
+
+/* «¿Por qué?»: datos en filas (etiqueta a la izquierda, dato a la derecha) y barra por partes */
+.esf-rz-filas { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 5px 0 7px; font-size: 12px; line-height: 1.35; }
+.esf-rz-filas dt { color: rgba(255, 255, 255, 0.72); }
+.esf-rz-filas dd { margin: 0; text-align: right; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+.esf-rz-pila { display: flex !important; gap: 2px; }
+.esf-rz-pila s { border-radius: 0 !important; }
+.esf-rz-pila s:first-child { border-radius: 99px 0 0 99px !important; }
+.esf-lista .esf-rz-filas + .esf-rz-med, .esf-lista .esf-rz-filas + .esf-rz-barras { margin-top: -1px; }
+
+/* datos en una sola línea: la etiqueta se acomoda, la cifra no se parte */
+.esf-rz-filas { grid-template-columns: minmax(0, 1fr) auto; }
+.esf-rz-filas dd { white-space: nowrap; }

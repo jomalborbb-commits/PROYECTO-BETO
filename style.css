@@ -715,67 +715,82 @@ td.debt-zero { color: var(--moss); }
 }
 
 /* =========================================================
-   FASE 1 (UI): PANEL DE CONTROL INDUSTRIAL
-   6 tarjetas compactas (3cm × 4cm) que voltean en 3D al clic.
-   Estilo intencionalmente OSCURO y de alto contraste, distinto
-   al resto de la página — como el tablero de un camión de carga,
-   no como una app de hábitos. Números en monoespaciada.
+   PANEL DE CONTROL — 6 gráficos en "medallones" (estilo galería
+   de tipos de gráfico). Grandes, bien separados y legibles.
+   Reposo: todo en naranja rojo. Al pasar el cursor: el gráfico
+   se colorea (lo hace script.js) y el círculo sube y crece.
+   Al clic la tarjeta voltea en 3D y muestra el detalle.
    ========================================================= */
 
 .control-panel-section {
+  /* Todos los colores del panel viven aquí para cambiarlos en un solo lugar */
+  --color-panel: #A9573F;
+  --color-panel-osc: #8C4633;
+  --color-panel-suave: rgba(169, 87, 63, 0.07);
+  --panel-fondo: #FFFFFF;
+  --panel-tinta: #23201B;
+
   margin-top: 26px;
-  padding: 22px 22px 26px;
+  padding: 30px 28px 40px;
   border-radius: var(--radius-m);
-  /* Fondo "rayos X de ladrillos": líneas finas tipo wireframe/neón
-     sobre panel casi negro, distinto del fondo cálido del resto de la página. */
-  background-color: #14110D;
-  background-image:
-    repeating-linear-gradient(0deg, rgba(77,216,224,0.07) 0px, rgba(77,216,224,0.07) 1px, transparent 1px, transparent 42px),
-    repeating-linear-gradient(90deg, rgba(77,216,224,0.07) 0px, rgba(77,216,224,0.07) 1px, transparent 1px, transparent 84px);
-  box-shadow: inset 0 0 60px rgba(0,0,0,0.6);
+  /* Fondo claro y liso: el círculo naranja rojo y sus colores vivos se ven
+     con el máximo contraste, como en la galería de referencia */
+  background: var(--panel-fondo);
+  border: 1px solid var(--line);
 }
 
 .control-panel-title {
-  font-family: var(--font-mono);
-  font-size: 17px;
+  font-family: var(--font-display);
+  font-size: 19px;
   font-weight: 700;
-  letter-spacing: 0.04em;
   margin: 0 0 4px;
-  color: #E8A33D;
-  text-transform: uppercase;
+  color: var(--panel-tinta);
 }
 
 .control-panel-subtitle {
-  margin: 0 0 18px;
-  color: #9C9488;
-  font-size: 12px;
+  margin: 0 0 30px;
+  color: var(--ink-soft);
+  font-size: 13px;
 }
 
+/* 3 columnas en escritorio (2 filas exactas), 2 en tablet y celular.
+   Distancia entre círculos (borde a borde) un tercio más corta que antes:
+   horizontal 182 → 121 px y vertical 241 → 161 px, con círculos de 147 px.
+   Cada columna mide 268 px (147 del círculo + 121 de aire) y las filas
+   280 px + 28 de separación (147 + 161 de aire). Para ajustar la separación
+   basta con cambiar estos números. */
 .control-panel-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 268px));
+  justify-content: center;
+  gap: 28px 0;
 }
 
 /* --- Mecánica de la tarjeta que voltea (flip card 3D) --- */
 .flip-card {
-  width: 3cm;
-  height: 4cm;
-  min-width: 108px;  /* respaldo por si "cm" se calcula distinto según el monitor */
-  min-height: 144px;
-  perspective: 800px; /* la "profundidad" 3D: sin esto, el giro se ve plano */
+  width: 100%;
+  aspect-ratio: 268 / 280;
+  min-height: 236px;
+  perspective: 1100px; /* la "profundidad" 3D: sin esto, el giro se ve plano */
   background: transparent;
   border: none;
   padding: 0;
   cursor: pointer;
   font-family: inherit;
+  color: var(--panel-tinta);
+}
+
+.flip-card:focus-visible {
+  outline: 3px solid var(--color-panel);
+  outline-offset: 4px;
+  border-radius: 20px;
 }
 
 .flip-card-inner {
   position: relative;
   width: 100%;
   height: 100%;
-  transition: transform 0.55s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
   transform-style: preserve-3d;
 }
 
@@ -787,79 +802,135 @@ td.debt-zero { color: var(--moss); }
   position: absolute;
   inset: 0;
   backface-visibility: hidden;
-  border-radius: 6px;
-  border: 1px solid #3A4A4C;
-  background: linear-gradient(160deg, #1B1712 0%, #100E0A 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 8px 6px;
-  box-shadow: 0 0 0 1px rgba(77,216,224,0.15), 0 4px 10px rgba(0,0,0,0.5);
+  gap: 12px;
 }
 
+/* El frente no lleva caja: el círculo flota sobre el panel, como en la referencia */
 .flip-card-front { transform: rotateY(0deg); }
+
+/* El reverso sí es una tarjeta blanca, para que el detalle se lea bien */
 .flip-card-back {
   transform: rotateY(180deg);
   overflow-y: auto;
   align-items: stretch;
   justify-content: flex-start;
-  padding: 10px 8px;
+  text-align: left;
+  gap: 0;
+  padding: 20px 20px;
+  background: #fff;
+  border: 2px solid var(--color-panel);
+  border-radius: 20px;
+  box-shadow: 0 10px 24px rgba(35, 32, 27, 0.10);
 }
 
-.flip-card:hover .flip-card-face {
-  border-color: #4DD8E0;
+/* --- El medallón: círculo con el gráfico dentro --- */
+.cp-medallon {
+  position: relative;
+  /* Un tercio más pequeño que antes (antes: min(74%, 220px)): 2/3 del diámetro anterior.
+     Para ajustar el tamaño solo hay que cambiar estos dos valores. */
+  width: min(55%, 147px);
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  border: 4px solid var(--color-panel);
+  background: #fff;
+  /* Ligero rebote al final (1.4): da la sensación de "llegar a su sitio"
+     sin que se sienta brusco */
+  transition:
+    transform 0.65s cubic-bezier(0.34, 1.4, 0.64, 1),
+    border-color 0.5s ease,
+    background-color 0.5s ease,
+    box-shadow 0.5s ease;
 }
 
+/* Chart.js necesita un contenedor con tamaño propio para ajustar el canvas */
+.cp-lienzo {
+  position: absolute;
+  inset: 14%;
+}
+
+.cp-lienzo canvas {
+  display: block;
+}
+
+.flip-card:hover .cp-medallon,
+.flip-card:focus-visible .cp-medallon {
+  transform: translateY(-6px) scale(1.06);
+  border-color: transparent;
+  background-color: var(--color-panel-suave);
+  box-shadow: 0 16px 30px rgba(169, 87, 63, 0.20);
+}
+
+/* --- Textos --- */
 .cp-label {
-  font-family: var(--font-mono);
-  font-size: 9px;
+  font-family: var(--font-display);
+  font-size: clamp(15px, 1.35vw, 19px);
   font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #4DD8E0;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--panel-tinta);
+  transition: color 0.5s ease;
+}
+
+.flip-card:hover .cp-label,
+.flip-card:focus-visible .cp-label {
+  color: var(--color-panel);
 }
 
 .cp-value {
   font-family: var(--font-mono);
-  font-size: 15px;
+  font-size: clamp(14px, 1.2vw, 17px);
   font-weight: 700;
-  color: #F4F0E8;
-  line-height: 1.1;
+  line-height: 1.2;
+  color: var(--ink-soft);
+  text-align: center;
+  max-width: 92%;
+  /* Los nombres largos (clientes, vendedores) se cortan en 2 líneas con "…"
+     en vez de romper la cuadrícula */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.cp-value-small { font-size: 11px; text-align: center; }
-
-.cp-icon {
-  font-size: 20px;
-  line-height: 1;
-}
-
+/* --- Detalle por detrás de la tarjeta --- */
 .flip-card-back h4 {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: #E8A33D;
-  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--color-panel);
+  margin: 0 0 12px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .flip-card-back p {
-  /* Cuerpo en serif, según el estilo tipográfico pedido para el resto del texto */
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 10.5px;
-  color: #D9D3C4;
-  margin: 0 0 4px;
-  line-height: 1.35;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink-soft);
+  margin: 0 0 10px;
+  line-height: 1.4;
 }
 
 .flip-card-back strong {
-  color: #F4F0E8;
-  font-family: var(--font-mono);
+  color: var(--panel-tinta);
+  font-family: var(--font-display);
 }
 
-@media (max-width: 700px) {
-  .control-panel-grid { justify-content: center; }
+@media (max-width: 900px) {
+  .control-panel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 8px; }
+  .control-panel-section { padding: 24px 16px 32px; }
+}
+
+/* Quien pide menos movimiento ve el cambio de color, pero sin subir ni crecer */
+@media (prefers-reduced-motion: reduce) {
+  .flip-card-inner,
+  .cp-medallon,
+  .cp-label { transition: none; }
+  .flip-card:hover .cp-medallon,
+  .flip-card:focus-visible .cp-medallon { transform: none; }
 }
 
 /* =========================================================

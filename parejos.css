@@ -1,0 +1,186 @@
+/* ==========================================================================
+   parejos.css — Ventana "¿Qué tan parejos son tus ingresos y egresos?"
+   Reutiliza la forma de la ventana "Ventas por mes" (clases vm- de
+   ventas-mes.css) y solo cambia el fondo (naranja suave) y agrega lo propio
+   de la desviación media absoluta. Todos los nombres nuevos empiezan con "pj-".
+   ========================================================================== */
+
+/* Nombre largo del círculo del panel: un poco más pequeño para que quepa */
+.cp-label.cp-label-largo {
+  font-size: clamp(13px, 1.1vw, 15.5px);
+  max-width: 92%;
+}
+
+/* ---------- Fondo naranja suave ---------- */
+.vm-overlay.pj-overlay {
+  --vm-naranja: #D9772E;
+  --vm-naranja-osc: #B8602A;
+  background: linear-gradient(135deg, #FCE6D2 0%, #F8CFAE 50%, #F2B98E 100%);
+}
+
+.pj-overlay .vm-marca { min-width: 0; }
+.pj-marca span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pj-overlay .vm-marca i { background: linear-gradient(135deg, #2FA84F 0 50%, #F07A1E 50% 100%); }
+
+/* ---------- Selector Ingresos / Egresos / Ambos ---------- */
+.pj-tipos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #F6EEE6;
+  border: 1px solid #EADBCB;
+}
+
+.pj-tipo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 4px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  font: 600 12.5px var(--font-body, "Inter", sans-serif);
+  color: #6A5A50;
+  cursor: pointer;
+}
+
+.pj-tipo i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.pj-tipo[data-tipo="ingresos"] i { background: #2FA84F; }
+.pj-tipo[data-tipo="egresos"] i { background: #F07A1E; }
+.pj-tipo[data-tipo="comparar"] i { background: linear-gradient(90deg, #2FA84F 0 50%, #F07A1E 50% 100%); }
+.pj-tipo:hover { background: rgba(255, 255, 255, 0.7); color: #2B211C; }
+.pj-tipo[aria-pressed="true"] { background: #fff; color: #2B211C; box-shadow: 0 2px 8px rgba(100, 60, 30, 0.15); }
+.pj-tipo:focus-visible { outline: 2px solid #D9772E; outline-offset: 1px; }
+
+.pj-nota-panel { margin-top: 6px; }
+.pj-interruptor-texto { font-size: 13px; color: #333; }
+.pj-overlay .vm-seccion { padding: 10px 0; }
+
+/* ---------- Análisis ---------- */
+.pj-bloque {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #EFE4D8;
+  background: #FFFCF8;
+}
+
+.pj-bloque-ingresos { border-left: 4px solid #2FA84F; }
+.pj-bloque-egresos { border-left: 4px solid #F07A1E; }
+.pj-bloque-relacion { border-left: 4px solid #8C4633; background: #FFF8F1; }
+
+.pj-bloque-titulo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+  font: 600 15px var(--font-display, "Poppins", sans-serif);
+  color: #2B211C;
+}
+
+.pj-bloque-titulo > i { width: 11px; height: 11px; border-radius: 50%; }
+
+.pj-overlay .vm-analisis-grid { margin-bottom: 12px; }
+
+.pj-parrafo {
+  margin: 0 0 9px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #2F2621;
+}
+
+.pj-lista { margin: 6px 0 0; padding-left: 20px; }
+.pj-lista li { margin: 3px 0; font-size: 13.5px; }
+
+.pj-notas {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #F7F1EA;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #6A5A50;
+}
+
+/* Etiqueta del nivel: muy parejo … muy disparejo (el color llega en --c) */
+.pj-nivel {
+  display: inline-block;
+  padding: 1px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--c);
+  background: color-mix(in srgb, var(--c) 12%, #fff);
+  color: var(--c);
+  font: 600 11.5px/1.6 var(--font-body, "Inter", sans-serif);
+  white-space: nowrap;
+  vertical-align: 1px;
+}
+
+/* ---------- Fórmulas ---------- */
+.pj-formulas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 10px;
+  margin: 12px 0 16px;
+}
+
+.pj-formula {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #FFF8F1;
+  border: 1px solid #F1DCC7;
+}
+
+.pj-formula span { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #B8602A; }
+.pj-formula code {
+  font: 600 16px/1.3 "Cambria Math", "Times New Roman", Georgia, serif;
+  color: #2B211C;
+  background: none;
+}
+.pj-formula em { font-style: normal; font-size: 12px; color: #6A5A50; line-height: 1.45; }
+
+.pj-sub { margin: 18px 0 8px; font: 600 14px var(--font-display, "Poppins", sans-serif); color: #8C4633; }
+
+.pj-pasos { margin: 0 0 10px; padding-left: 22px; }
+.pj-pasos li { margin: 6px 0; font-size: 14px; line-height: 1.55; }
+
+.pj-tabla-ejemplo { margin: 6px 0 12px; }
+
+.pj-guia { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.pj-guia-fila {
+  display: grid;
+  grid-template-columns: 150px 110px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #FCFAF7;
+  font-size: 13px;
+}
+.pj-guia-fila em { font-style: normal; color: #6A5A50; }
+
+/* ---------- Tabla mes a mes ---------- */
+.pj-tabla tbody .pj-fila { cursor: pointer; }
+.pj-tabla tbody .pj-fila:hover td { background: #FFF3E8; }
+.pj-tabla tbody .pj-fila-activa td { background: #FDE4CD; font-weight: 600; }
+.pj-tabla .pj-fila-anio td { border-top: 2px solid #E8D5C2; }
+.pj-tabla .pj-fila-entre td { background: #FAF6F1; font-style: italic; color: #5A4A40; }
+.pj-tabla .pj-nivel { margin-left: 4px; font-size: 10.5px; }
+.pj-provisional { color: #B8602A; font-style: normal; }
+
+@media (max-width: 700px) {
+  .pj-guia-fila { grid-template-columns: 1fr; gap: 2px; }
+}
+
+/* En pantallas angostas la columna no se estira al ancho del gráfico:
+   el gráfico se achica para caber (ver redibujar en parejos.js) */
+@media (max-width: 980px) {
+  .pj-overlay .vm-cuerpo { grid-template-columns: minmax(0, 1fr); }
+  .pj-overlay .vm-marco { overflow-x: auto; }
+}

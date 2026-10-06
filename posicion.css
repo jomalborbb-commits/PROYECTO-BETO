@@ -1,0 +1,38 @@
+/* ==========================================================================
+   posicion.css — Ventana "Medidas de posición" (posicion.js)
+   Usa la misma forma y el mismo fondo naranja suave de las ventanas
+   «¿Qué tan parejos…?» y «Estabilidad» (clases vm-, pj- y es-).
+   Nombres nuevos con "ps-". Sus colores: verde y azul.
+   ========================================================================== */
+
+/* Marca de la ventana: verde y azul, como su círculo */
+.ps-overlay .vm-marca i { background: linear-gradient(135deg, #16A34A 0 50%, #2563EB 50% 100%); }
+
+.ps-bloque .vm-analisis-grid { margin-bottom: 12px; }
+.ps-bloque .vm-dato strong { font-size: 17px; }
+
+/* Consejos de decisión: cómo actuar con los datos de hoy */
+.ps-bloque-consejos {
+  border-left: 4px solid #2563EB;
+  background: linear-gradient(135deg, #F0FDF4 0%, #EFF6FF 100%);
+}
+.ps-consejos li { background: #fff; border-color: #D6E4FF; }
+.ps-consejos li::before { content: "➜"; background: linear-gradient(135deg, #16A34A, #2563EB); }
+
+.ps-bloque-meses { border-left: 4px solid #1E3A8A; }
+
+/* Tabla de la resolución paso a paso */
+.ps-tabla-formula th,
+.ps-tabla-formula td { white-space: nowrap; font-size: 12.5px; }
+.ps-tabla-formula td small { color: #7A6A60; }
+
+/* Hojas de la tabla: "Mes a mes" y "Percentiles" */
+.ps-hoja {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  background: #E9DCCD;
+  color: #5A4A40;
+}
+.ps-hoja[aria-pressed="true"] { background: var(--vm-naranja-osc); color: #fff; }
+.ps-hoja:focus-visible { outline: 2px solid #2563EB; outline-offset: 2px; }

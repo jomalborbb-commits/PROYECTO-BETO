@@ -1,0 +1,24 @@
+/* Cuadro de ayuda de las gráficas (tooltip-lateral.js): se pone al costado, sin tapar la gráfica */
+.ayuda-grafica {
+  position: fixed;
+  z-index: 5000;
+  max-width: 340px;
+  padding: 9px 12px 10px;
+  border-radius: 10px;
+  background: rgba(33, 26, 22, 0.94);
+  color: #fff;
+  font: 400 12px/1.4 "Poppins", "Inter", sans-serif;
+  box-shadow: 0 10px 26px rgba(20, 12, 8, 0.28);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.ayuda-grafica.visible { opacity: 1; transform: none; }
+.ayuda-grafica p { margin: 0; }
+.ayuda-grafica .ag-titulo { margin-bottom: 4px; font-weight: 600; font-size: 12.5px; color: #FFE9D6; }
+.ayuda-grafica .ag-fila { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 7px; }
+.ayuda-grafica .ag-fila i { flex: none; width: 9px; height: 9px; border-radius: 2px; transform: translateY(1px); }
+.ayuda-grafica .ag-fila span { flex: 1 1 auto; }
+.ayuda-grafica .ag-fila em { margin-left: auto; padding-left: 8px; white-space: nowrap; font-style: normal; font-size: 11px; color: #E6D8CC; }
+.ayuda-grafica .ag-nota { margin-top: 3px; font-size: 11.2px; color: #E6D8CC; white-space: normal; }

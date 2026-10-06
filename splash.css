@@ -1,0 +1,114 @@
+/* ==========================================================================
+   splash.css — Pantalla de bienvenida (solo el nombre de la empresa)
+   --------------------------------------------------------------------------
+   Es una capa independiente: NO toca ningún selector de style.css.
+   Todos los nombres empiezan con "splash-" para no chocar con la interfaz.
+   ========================================================================== */
+
+/* La tipografía del nombre se pide desde aquí (y no desde index.html) para que
+   index.html solo necesite UNA línea <link>. Si falla (sin internet), el texto
+   cae a Segoe UI / Arial, que también son sobrias. */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap');
+
+/* Bloquea el scroll de la página de atrás mientras la splash está encima */
+html.splash-activa {
+  overflow: hidden;
+}
+
+.splash-root {
+  position: fixed;
+  inset: 0;
+  /* Por encima de modales (200) y toasts de la app, con margen de sobra */
+  z-index: 2147483000;
+  /* Mientras carga three.js: así nunca se ve la interfaz "parpadeando" */
+  background: #060403;
+  overflow: hidden;
+  cursor: pointer;   /* un clic entra al sistema */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Cuando la escena 3D ya está dibujada, el fondo pasa a ser el de la escena
+   (que se disuelve al final y deja ver la interfaz real detrás) */
+.splash-root.splash-lista {
+  background: transparent;
+}
+
+/* Fondo oscuro con un leve resplandor cálido en el centro */
+.splash-fondo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(255, 96, 20, 0.16) 0%, rgba(255, 96, 20, 0.05) 32%, rgba(0, 0, 0, 0) 62%),
+    radial-gradient(ellipse at 50% 50%, #0d0705 0%, #050302 100%);
+}
+
+/* Nombre de la empresa: aparece cuando todo terminó de caer. Sobre el mismo
+   fondo oscuro (la interfaz NO se ve mientras se muestra). Todo el proceso dura
+   2,5 s (la duración exacta se pone desde splash.js con animation-duration). */
+.splash-bienvenida {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.splash-bv-bloque {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 100%;
+  opacity: 0;
+  /* Viene desde el fondo: empieza muy pequeño y se va acercando y agrandando en un
+     solo movimiento continuo (una sola curva suave, sin cortes ni tirones) durante
+     todo el mensaje. La transparencia y el enfoque entran aparte, al comienzo. */
+  animation:
+    splash-bv-acercar 2.5s cubic-bezier(0.16, 0.62, 0.3, 1) both,
+    splash-bv-aparecer 0.8s ease-out both,
+    splash-bv-enfocar 1s ease-out both;
+  will-change: transform, opacity, filter;
+}
+
+@keyframes splash-bv-acercar {
+  from { scale: 0.1; }
+  to   { scale: 1.04; }
+}
+
+@keyframes splash-bv-aparecer {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes splash-bv-enfocar {
+  from { filter: blur(7px); }
+  to   { filter: blur(0); }
+}
+/* Tipografía sobria y corporativa: Montserrat seminegrita con letras separadas,
+   relleno rojo anaranjado suave y un contorno fino dorado-amarillo en cada letra.
+   El contorno es una copia del texto (::before) con trazo dorado, detrás del
+   relleno: así solo se ve por fuera de cada letra y funciona en cualquier navegador. */
+.splash-bv-linea {
+  position: relative;
+  isolation: isolate;
+  font-family: "Montserrat", "Segoe UI", Arial, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  margin-right: -0.16em;   /* compensa el espacio que deja tras la última letra */
+  line-height: 1.2;
+  white-space: nowrap;
+  color: #ff8a66;
+}
+
+.splash-bv-linea::before {
+  content: attr(data-t);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  color: #f3c94f;
+  -webkit-text-stroke: 0.075em #f3c94f;
+  text-shadow: 0 0 20px rgba(243, 201, 79, 0.3);
+}

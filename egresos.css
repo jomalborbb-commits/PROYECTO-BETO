@@ -1,0 +1,459 @@
+/* ==========================================================================
+   egresos.css — Ingresos / Egresos, registro de egresos, su formulario
+   y el selector de meses de la cabecera.
+   Usa la misma paleta del diseño (terracota, crema, arena, verde y ámbar).
+   Ingresos se marcan en verde (dinero que entra) y egresos en naranja
+   fuerte (dinero que sale); el rojo sigue reservado para borrar y errores.
+   Quitar la línea de este archivo en index.html deja el estilo anterior.
+   ========================================================================== */
+
+:root {
+  --ingreso: #3E6B40;
+  --ingreso-tint: #E2F1E4;
+  --ingreso-borde: #BFDDC6;
+  --egreso: #D9480F;          /* naranja fuerte */
+  --egreso-tint: #FFE3D0;
+  --egreso-borde: #FF9A55;
+  --egreso-solido: #F26B1D;
+}
+
+/* ---------- 1. Selector Ingresos / Egresos del menú lateral ---------- */
+.sb-modo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin: 0 0 10px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(169, 87, 63, 0.08);
+  border: 1px solid rgba(169, 87, 63, 0.14);
+}
+
+.sb-modo-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 6px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font: 600 13px var(--font-body);
+  color: var(--tinta-suave);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sb-modo-btn svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sb-modo-btn:hover { color: var(--tinta); background: rgba(255, 255, 255, 0.6); }
+
+.sb-modo-btn[aria-pressed="true"] {
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(100, 60, 30, 0.14);
+}
+
+#btnModoIngresos[aria-pressed="true"] { color: var(--ingreso); }
+#btnModoEgresos[aria-pressed="true"] { color: var(--egreso); }
+
+.sb-modo-btn:focus-visible { outline: 2px solid var(--terracota); outline-offset: 1px; }
+
+/* ---------- 2. Título del "Registro del mes" y resumen del mes ---------- */
+.modo-pill {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 11px;
+  border-radius: 999px;
+  font: 600 11.5px/1.5 var(--font-body);
+  letter-spacing: 0.02em;
+  vertical-align: 2px;
+}
+
+.modo-pill-ingresos { background: var(--ingreso-tint); color: var(--ingreso); border: 1px solid var(--ingreso-borde); }
+.modo-pill-egresos { background: var(--egreso-solido); color: #fff; border: 1px solid var(--egreso); }
+
+.card-tabla .card-cab { flex-wrap: wrap; }
+
+.reg-resumen {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-left: auto;
+  padding: 6px 14px;
+  border-radius: 12px;
+  background: #FBF6EF;
+  border: 1px solid var(--line);
+  line-height: 1.25;
+}
+
+.reg-resumen small { font-size: 10.5px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: 0.06em; }
+.reg-resumen strong { font: 600 16px var(--font-display); color: var(--tinta); }
+.reg-resumen span { font-size: 11.5px; color: var(--tinta-suave); }
+
+.modo-egresos .reg-resumen { border-color: var(--egreso-borde); background: #FFF4EC; }
+.modo-ingresos .reg-resumen { border-color: var(--ingreso-borde); background: #F4FAF4; }
+
+/* Al cambiar de ingresos a egresos, la tarjeta se resalta un instante */
+@keyframes reg-destello {
+  0%   { box-shadow: 0 0 0 0 rgba(169, 87, 63, 0.35), var(--shadow-card); }
+  100% { box-shadow: 0 0 0 14px rgba(169, 87, 63, 0), var(--shadow-card); }
+}
+.card-tabla.reg-destello { animation: reg-destello 0.9s ease-out; }
+
+/* ---------- 3. Tabla de egresos (5 columnas: no necesita 1600 px de ancho) ---------- */
+.modo-egresos #tablaRegistros { min-width: 900px; }
+
+#tablaRegistros td.eg-desc {
+  white-space: normal;
+  min-width: 220px;
+  max-width: 380px;
+}
+
+#tablaRegistros td.eg-col-benef {
+  white-space: normal;
+  min-width: 260px;
+}
+
+.eg-benef { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.eg-chip {
+  display: inline-block;
+  max-width: 230px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #F5EBDF;
+  border: 1px solid #EADBCB;
+  font-size: 11.5px;
+  color: var(--tinta);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eg-chip-mas { background: var(--egreso-tint); border-color: var(--egreso-borde); color: var(--egreso); font-weight: 600; }
+
+/* Monto que en el Excel venía con signo de dólar: se marca para revisarlo */
+.eg-aviso {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--egreso-tint);
+  border: 1px solid var(--egreso-borde);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--egreso);
+  white-space: nowrap;
+  cursor: help;
+}
+
+.eg-aviso-form {
+  margin: 0 0 12px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: var(--egreso-tint);
+  border: 1px solid var(--egreso-borde);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--egreso);
+}
+.eg-aviso-form[hidden] { display: none; }
+.eg-sin { color: var(--tinta-suave); }
+
+/* ---------- 4. Formulario de egreso ---------- */
+.modal-egreso { max-width: 680px; }
+
+.form-grid .benef-etiqueta { margin-bottom: 6px; }
+
+.benef-campo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 6px 8px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  cursor: text;
+}
+
+.benef-campo:focus-within {
+  outline: 2px solid var(--brick);
+  outline-offset: 1px;
+  border-color: var(--brick);
+}
+
+.benef-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.benef-chips:empty { display: none; }
+
+.benef-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 4px 5px 4px 11px;
+  border-radius: 999px;
+  background: #F5EBDF;
+  border: 1px solid #EADBCB;
+  font: 500 12.5px var(--font-body);
+  color: var(--tinta);
+  animation: benef-entrar 0.14s ease-out;
+}
+
+@keyframes benef-entrar {
+  from { transform: scale(0.9); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.benef-chip span { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.benef-chip button {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border: none;
+  border-radius: 50%;
+  background: rgba(169, 87, 63, 0.14);
+  color: var(--terracota-osc);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.benef-chip button:hover { background: var(--peligro-tint); color: var(--peligro-osc); }
+
+.form-grid .benef-campo input {
+  flex: 1 1 180px;
+  min-width: 150px;
+  padding: 6px 4px;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+.form-grid .benef-campo input:focus { outline: none; border: none; }
+
+.benef-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.benef-ayuda { margin: 0; font-size: 11.5px; color: var(--ink-soft); flex: 1 1 260px; }
+.benef-ayuda strong { color: var(--tinta); }
+
+.benef-ayuda kbd {
+  padding: 0 5px;
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: #fff;
+  font: 600 10.5px var(--font-body);
+}
+
+.benef-agregar { padding: 7px 12px; font-size: 12.5px; }
+
+/* ---------- 5. Menú "Más acciones": grupos Ingresos y Egresos ---------- */
+.dropdown-grupo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 8px 8px 2px;
+  font: 600 10px var(--font-body);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #A38F80;
+}
+
+.dropdown-grupo:first-child { margin-top: 4px; }
+
+.dropdown-grupo::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.dropdown-grupo-ingresos::before { background: #5E9A61; }
+.dropdown-grupo-egresos::before { background: var(--egreso-solido); }
+
+/* ---------- 6. Borrar datos: elegir qué se borra ---------- */
+.borrar-alcance {
+  margin: 4px 0 14px;
+  padding: 10px 14px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  text-align: left;
+}
+
+.borrar-alcance legend { padding: 0 4px; font: 600 12px var(--font-body); color: var(--tinta); }
+
+.borrar-alcance label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 0;
+  font-size: 13px;
+  color: var(--tinta);
+  cursor: pointer;
+}
+
+.borrar-alcance input { accent-color: var(--peligro-osc); width: 16px; height: 16px; }
+
+/* ---------- 7. Selector de meses de la cabecera ----------
+   Antes quedaba recortado por la cabecera y encima de la foto. Ahora flota
+   por encima de todo, justo debajo de su botón, con su propio recuadro. */
+.hero-mes-panel {
+  position: fixed;
+  top: 80px;
+  right: 24px;
+  width: min(380px, calc(100vw - 24px));
+  padding: 16px;
+  border-radius: 18px;
+  background: #FFFDF9;
+  border: 1px solid var(--line);
+  box-shadow: 0 22px 50px rgba(60, 30, 15, 0.26), 0 2px 6px rgba(60, 30, 15, 0.08);
+  z-index: 45;
+  animation: mes-panel-entrar 0.16s ease-out;
+}
+
+.hero-mes-panel[hidden] { display: none; }
+
+@keyframes mes-panel-entrar {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Piquito que apunta al botón del mes */
+.hero-mes-panel::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  right: 40px;
+  width: 12px;
+  height: 12px;
+  background: #FFFDF9;
+  border-left: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  transform: rotate(45deg);
+}
+
+.mes-panel-cab {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 12px;
+  padding: 0 2px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.mes-panel-cab strong { font: 600 14.5px var(--font-display); color: var(--tinta); }
+.mes-panel-cab span { font-size: 11.5px; color: var(--tinta-suave); }
+
+.hero-mes-panel .month-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.hero-mes-panel .month-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 52px;
+  padding: 8px 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  font: 600 11px var(--font-body);
+  letter-spacing: 0.03em;
+  color: var(--tinta-suave);
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.12s ease;
+}
+
+.hero-mes-panel .month-tab:hover {
+  border-color: var(--terracota);
+  color: var(--terracota-osc);
+  background: #FFF8F2;
+  transform: translateY(-1px);
+}
+
+.hero-mes-panel .month-tab.active {
+  background: var(--terracota);
+  border-color: var(--terracota);
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(140, 70, 51, 0.28);
+}
+
+.mt-cantidad {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #F5EBDF;
+  font: 600 10.5px var(--font-body);
+  letter-spacing: 0;
+  color: var(--terracota-osc);
+}
+
+.month-tab.active .mt-cantidad { background: rgba(255, 255, 255, 0.24); color: #fff; }
+
+@media (max-width: 560px) {
+  .hero-mes-panel { right: 12px !important; }
+  .hero-mes-panel .month-tabs { grid-template-columns: repeat(3, 1fr); }
+  .reg-resumen { align-items: flex-start; margin-left: 52px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-mes-panel, .benef-chip, .card-tabla.reg-destello { animation: none; }
+}
+
+/* ---------- 8. Pie de página: sello del logo (toro + "CRF" + doble contorno) ----------
+   La imagen es solo el molde (sin el fondo naranja); el color lo pone el ::before.
+   La sombra va en el contenedor para que el contorno se note bien sobre el crema. */
+.pie-sello {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 92px;
+  height: 92px;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.85)) drop-shadow(0 2px 3px rgba(90, 38, 18, 0.28));
+}
+
+.pie-sello::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: #8C3F26;   /* terracota oscuro: contraste alto con el fondo */
+  -webkit-mask: url("assets/img/sello-crf.png") center / contain no-repeat;
+  mask: url("assets/img/sello-crf.png") center / contain no-repeat;
+}
+
+@media (max-width: 560px) {
+  .pie-sello { width: 76px; height: 76px; }
+}

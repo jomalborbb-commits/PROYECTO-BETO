@@ -1,0 +1,932 @@
+/* ==========================================================================
+   negocio.css — Panel de un vistazo (negocio.js)
+   Indicadores de arriba, fila de 3 gráficas y «Salud de tu negocio».
+   Se carga después de dashboard.css y reutiliza sus tarjetas (.card, .k5,
+   .kpi-card, .kc-*). Nombres nuevos con "ng-".
+   ========================================================================== */
+
+/* ---------- Colores de bueno y malo (los mismos del semáforo) ---------- */
+.ng-pos { color: #15803D !important; }
+.ng-neg { color: #B91C1C !important; }
+.ng-azul { color: #1D4ED8 !important; }
+.ng-morado { color: #6D28D9 !important; }
+
+/* ---------- Miniaturas (iconos) con más color, una por tema ---------- */
+.ng-ico {
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(40, 30, 60, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.ng-ico svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform-origin: 50% 60%;
+}
+.ng-ico-ganancia { background: linear-gradient(135deg, #22C55E 0%, #0D9488 100%) !important; }
+.ng-ico-meta { background: linear-gradient(135deg, #3B82F6 0%, #7C3AED 100%) !important; }
+.ng-ico-ventas { background: linear-gradient(135deg, #FBBF24 0%, #EA580C 100%) !important; }
+.ng-ico-gastos { background: linear-gradient(135deg, #F43F5E 0%, #DB2777 100%) !important; }
+.ng-ico-clientes { background: linear-gradient(135deg, #8B5CF6 0%, #F59E0B 100%) !important; }
+.ng-ico-balanza { background: linear-gradient(135deg, #0EA5E9 0%, #1D4ED8 100%) !important; }
+.ng-ico-plata { background: linear-gradient(135deg, #F97316 0%, #DC2626 100%) !important; }
+
+/* Al pasar el cursor, cada miniatura se mueve según su tema */
+@keyframes ngSubir { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(-3px) scale(1.08); } 70% { transform: translateY(1px); } }
+@keyframes ngLatir { 0%, 100% { transform: scale(1); } 30% { transform: scale(1.16); } 60% { transform: scale(0.96); } }
+@keyframes ngMecer { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-10deg); } 75% { transform: rotate(10deg); } }
+@keyframes ngGirar { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+.ng-card:hover .ng-ico-ganancia svg, .ng-k5:hover .ng-ico-ganancia svg { animation: ngSubir 0.9s ease-in-out infinite; }
+.ng-card:hover .ng-ico-meta svg, .ng-k5:hover .ng-ico-meta svg { animation: ngLatir 1s ease-in-out infinite; }
+.ng-card:hover .ng-ico-clientes svg, .ng-k5:hover .ng-ico-clientes svg, .kpi-card:hover .ng-ico-clientes svg { animation: ngMecer 0.9s ease-in-out infinite; }
+.ng-k5:hover .ng-ico-ventas svg { animation: ngSubir 0.9s ease-in-out infinite; }
+.ng-k5:hover .ng-ico-gastos svg, .kpi-card:hover .ng-ico-plata svg { animation: ngMecer 1s ease-in-out infinite; }
+.kpi-card:hover .ng-ico-balanza svg { animation: ngMecer 1.2s ease-in-out infinite; }
+
+.ng-card, .ng-k5, #sec-indicadores .kpi-card { transition: box-shadow 0.25s ease, transform 0.25s ease; }
+.ng-card:hover, .ng-k5:hover, #sec-indicadores .kpi-card:hover {
+  box-shadow: 0 12px 28px rgba(90, 50, 30, 0.14);
+  transform: translateY(-2px);
+}
+
+/* ---------- Indicadores de arriba ---------- */
+.ng-k5 .k5-etq { line-height: 1.3; }
+.k5-valor.ng-valor-largo { font-size: clamp(17px, 1.4vw, 24px); }
+
+.ng-chip {
+  background: color-mix(in srgb, var(--c) 14%, #fff) !important;
+  color: color-mix(in srgb, var(--c) 82%, #000) !important;
+  border: 1px solid color-mix(in srgb, var(--c) 35%, #fff);
+}
+.ng-k5 .k5-pie { flex-wrap: wrap; row-gap: 4px; }
+.ng-k5 .k5-pie > span:last-child { text-align: right; flex: 1 1 auto; min-width: 0; }
+
+/* ---------- Aviso: el mes elegido no tiene datos ---------- */
+.ng-aviso {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #FFF7E6 0%, #FDEBD3 100%);
+  border: 1px solid #F3D3A8;
+  box-shadow: var(--shadow-card);
+}
+.ng-aviso[hidden] { display: none; }
+.ng-aviso p { margin: 0; flex: 1; font-size: 13.5px; line-height: 1.45; color: var(--tinta); }
+.ng-aviso-ico {
+  width: 38px; height: 38px; flex: none;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #F59E0B, #EA580C);
+  color: #fff;
+}
+.ng-aviso-ico svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; }
+.ng-aviso-boton {
+  flex: none;
+  border: none;
+  border-radius: 999px;
+  padding: 9px 18px;
+  background: var(--terracota);
+  color: #fff;
+  font: 600 13px var(--font-body);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(169, 87, 63, 0.3);
+}
+.ng-aviso-boton:hover { background: var(--terracota-osc); }
+.ng-aviso-boton:focus-visible { outline: 3px solid #1D4ED8; outline-offset: 2px; }
+
+/* ---------- Fila de 3 gráficas ---------- */
+@media (min-width: 1361px) {
+  .fila-graficas { grid-template-columns: 1.35fr 1fr 1fr; }
+}
+.ng-card { display: flex; flex-direction: column; }
+.ng-respuesta { margin: -2px 0 8px; }
+.ng-cifra {
+  margin: 0;
+  font: 600 clamp(17px, 1.35vw, 21px)/1.25 var(--font-display);
+  color: var(--tinta);
+}
+.ng-frase { margin: 4px 0 0; font-size: 12.8px; line-height: 1.5; color: #4A3C35; }
+.ng-datos {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.ng-datos li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #F7F0E6;
+  border: 1px solid #EFE2D2;
+  font-size: 11.5px;
+}
+.ng-datos li span { color: var(--tinta-suave); }
+.ng-datos li b { font-weight: 600; color: var(--tinta); }
+
+.ng-lienzo { margin-top: auto; }
+.ng-lienzo-vacio { opacity: 0.45; }
+
+.ng-marco-sel { background: transparent !important; border: 2px solid #1F2937; border-radius: 3px !important; }
+.ng-leyenda-nota { font-style: italic; opacity: 0.85; }
+
+/* Tira de 12 meses: ¿qué meses cubrieron sus egresos? */
+.ng-tira {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 10px;
+}
+.ng-tira-mes {
+  padding: 4px 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font: 600 10.5px/1.2 var(--font-body);
+  text-align: center;
+  cursor: pointer;
+}
+.ng-tira-mes:disabled { cursor: default; }
+.ng-tira-si { background: #DCFCE7; color: #166534; border-color: #86EFAC; }
+.ng-tira-no { background: #FEE2E2; color: #991B1B; border-color: #FCA5A5; }
+.ng-tira-sin { background: #F4EEE6; color: #A8998D; }
+.ng-tira-sel { outline: 2px solid #1F2937; outline-offset: 1px; }
+.ng-tira-mes:not(:disabled):hover { filter: brightness(0.95); }
+
+/* ---------- Salud de tu negocio ---------- */
+#sec-indicadores .kpi-grid { align-items: start; }
+#sec-indicadores .kc-cifra small { font-size: 14px; font-weight: 500; color: var(--tinta-suave); }
+#sec-indicadores .kc-unidad b { color: var(--tinta); }
+
+.ng-estado {
+  background: color-mix(in srgb, var(--c) 14%, #fff) !important;
+  color: color-mix(in srgb, var(--c) 82%, #000) !important;
+  border: 1px solid color-mix(in srgb, var(--c) 35%, #fff);
+}
+
+.ng-arriba, .ng-abajo { display: flex; flex-direction: column; gap: 10px; }
+.ng-abajo:empty { display: none; }
+.ng-mini-lienzo { position: relative; height: 172px; margin-top: 2px; }
+.ng-mini-lienzo[hidden] { display: none; }
+.ng-leyenda-mini {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  font-size: 11px;
+  color: var(--tinta-suave);
+}
+.ng-cuadro { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-left: 4px; }
+.ng-raya { display: inline-block; width: 16px; height: 0; border-top: 3px solid #1E3A8A; margin-left: 4px; }
+.ng-raya-morada { border-top-color: #263238; }
+
+.ng-formula {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  font: 500 12.5px/1.45 "Cambria Math", "Times New Roman", Georgia, serif;
+  color: #1E3A8A;
+}
+.ng-nota { margin: 0; font-size: 11px; color: var(--tinta-suave); font-style: italic; }
+
+.ng-conmutador {
+  display: inline-grid;
+  grid-auto-flow: column;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #F6EEE6;
+  border: 1px solid #EADBCB;
+  align-self: flex-start;
+}
+.ng-conmutador button {
+  border: none;
+  border-radius: 9px;
+  padding: 6px 12px;
+  background: transparent;
+  font: 600 12px var(--font-body);
+  color: #6A5A50;
+  cursor: pointer;
+}
+.ng-conmutador button[aria-pressed="true"] { background: #fff; color: #2B211C; box-shadow: 0 2px 8px rgba(100, 60, 30, 0.15); }
+.ng-conmutador button:focus-visible { outline: 2px solid #EA580C; outline-offset: 1px; }
+
+.ng-plata-cifra { font-size: 26px !important; }
+
+.ng-plata-detalle {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--c) 40%, #fff);
+  border-left: 4px solid var(--c);
+  background: color-mix(in srgb, var(--c) 7%, #fff);
+  font-size: 12.5px;
+}
+.ng-plata-detalle ol { margin: 6px 0 0; padding-left: 18px; }
+.ng-plata-detalle li { margin: 3px 0; }
+.ng-plata-detalle li span, .ng-dejaron li span { display: block; color: #3B2F2A; font-weight: 500; }
+.ng-plata-detalle li small, .ng-dejaron li small { display: block; color: var(--tinta-suave); font-size: 11.5px; }
+.ng-plata-detalle li small b { color: #3B2F2A; font-weight: 600; }
+
+/* En la lista de datos, el monto nunca se parte en dos líneas */
+#sec-indicadores .kc-detalle li strong { white-space: nowrap; }
+#sec-indicadores .kc-detalle li span { min-width: 0; }
+
+.ng-dejaron {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #FFF7ED;
+  border: 1px solid #FED7AA;
+  font-size: 12.5px;
+}
+.ng-dejaron > b { display: block; color: #9A3412; }
+.ng-dejaron > span { display: block; color: var(--tinta-suave); font-size: 11.5px; }
+.ng-dejaron ol { margin: 6px 0 0; padding-left: 18px; }
+.ng-dejaron em { display: block; margin-top: 4px; font-size: 11.5px; color: var(--tinta-suave); }
+
+/* ---------- Mis gráficos: con 3 círculos, el tercero centrado en tableta ---------- */
+@media (max-width: 900px) {
+  .control-panel-grid > .flip-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: 50%;
+  }
+}
+
+@media (max-width: 560px) {
+  .ng-aviso { flex-wrap: wrap; }
+  .ng-aviso-boton { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ng-ico svg { animation: none !important; }
+  .ng-card:hover, .ng-k5:hover, #sec-indicadores .kpi-card:hover { transform: none; }
+}
+
+/* ---------- Menú lateral de 8 secciones ---------- */
+a.sb-subitem { text-decoration: none; }
+a.sb-subitem:focus-visible, a.sb-item:focus-visible { outline: 2px solid var(--terracota); outline-offset: 2px; }
+
+/* Secciones que llegan en la siguiente entrega: visibles pero sin acción */
+.sb-item.sb-pronto { cursor: default; opacity: 0.6; }
+.sb-item.sb-pronto small {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #F1E8DD;
+  color: var(--tinta-suave);
+  font: 600 10.5px var(--font-body);
+}
+
+.sb-nota-menu { margin: 0 4px 6px; font-size: 11.5px; line-height: 1.4; color: var(--tinta-suave); }
+.sb-subetiqueta {
+  margin: 12px 4px 4px;
+  font: 600 11px var(--font-body);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+/* ---------- Gráfico de los últimos 6 meses y aviso al llegar desde la esfera ---------- */
+.ng-seis .card-cab { flex-wrap: wrap; }
+.ng-seis-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.ng-chip-seis {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--c) 12%, #fff);
+  border: 1px solid color-mix(in srgb, var(--c) 40%, #fff);
+  color: color-mix(in srgb, var(--c) 85%, #000);
+  font: 600 11.5px var(--font-body);
+}
+.ng-chip-seis i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.ng-seis .db-lienzo { height: 230px; }
+
+@keyframes ngDestello { 0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.55); } 100% { box-shadow: 0 0 0 18px rgba(124, 58, 237, 0); } }
+.ng-destello { animation: ngDestello 0.9s ease-out 2; }
+
+/* ---------- «Más detalles» en cada tarjeta: lo esencial a la vista, el resto al pedirlo ---------- */
+.ng-mas {
+  align-self: flex-start;
+  margin-top: 10px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid #D8C7B5;
+  background: #fff;
+  color: #2B211C;
+  font: 600 12px var(--font-body);
+  cursor: pointer;
+}
+.ng-mas:hover { background: #FFF3E8; }
+.ng-mas:focus-visible { outline: 2px solid #2563EB; outline-offset: 2px; }
+.ng-abajo:empty + .ng-mas { display: none; }
+
+/* Tarjetas de «Salud de tu negocio»: cerradas muestran la cifra, la explicación y su gráfico */
+/* (las tarjetas ya no tienen «Más detalles»: todo lo importante se ve siempre) */
+/* Tarjetas de la fila de gráficas: cerradas ocultan la lista de datos */
+.ng-card:not(.ng-abierto) .ng-datos { display: none; }
+
+/* ---------- Botón «Importar / exportar»: un poco más visible y claro ---------- */
+.sb-accion-destacada {
+  padding: 10px 14px;
+  border: 1px solid rgba(169, 87, 63, 0.42);
+  background: linear-gradient(180deg, rgba(169, 87, 63, 0.17), rgba(169, 87, 63, 0.09));
+  color: var(--terracota-osc);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(140, 70, 51, 0.12);
+}
+.sb-accion-destacada svg { stroke-width: 2; }
+.sb-accion-destacada:hover, .sb-accion-destacada[aria-expanded="true"] {
+  background: linear-gradient(180deg, rgba(169, 87, 63, 0.26), rgba(169, 87, 63, 0.14));
+  border-color: rgba(169, 87, 63, 0.6);
+}
+.sb-accion-destacada:focus-visible { outline: 2px solid var(--terracota); outline-offset: 2px; }
+.dropdown-ayuda { margin: 2px 12px 6px; font-size: 11.5px; line-height: 1.4; color: var(--tinta-suave); }
+
+/* ---------- Fondo de toda la página (detrás de todo) ----------
+   Durazno suave con un brillo claro arriba y ondas naranja abajo a la derecha.
+   Va fijo: al desplazar la página el fondo se queda quieto y tus datos pasan
+   por encima. Las tarjetas conservan su propio fondo. */
+body {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1400 620' preserveAspectRatio='xMaxYMax slice'%3E%3Cdefs%3E%3ClinearGradient id='a' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23FFB98A' stop-opacity='0'/%3E%3Cstop offset='.55' stop-color='%23FFA062' stop-opacity='.34'/%3E%3Cstop offset='1' stop-color='%23F98A3F' stop-opacity='.55'/%3E%3C/linearGradient%3E%3ClinearGradient id='b' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23FFD2AE' stop-opacity='0'/%3E%3Cstop offset='.6' stop-color='%23FFB47A' stop-opacity='.3'/%3E%3Cstop offset='1' stop-color='%23FA9A55' stop-opacity='.42'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 470 C 260 330, 470 520, 760 400 S 1160 250, 1400 300 L1400 620 L0 620 Z' fill='url(%23a)'/%3E%3Cpath d='M0 540 C 300 420, 560 590, 860 470 S 1200 350, 1400 400 L1400 620 L0 620 Z' fill='url(%23b)'/%3E%3Cpath d='M120 620 C 380 500, 640 600, 900 500 S 1250 380, 1400 430' fill='none' stroke='%23FFFFFF' stroke-opacity='.55' stroke-width='2.2'/%3E%3Cpath d='M40 590 C 320 470, 600 570, 880 470 S 1240 340, 1400 390' fill='none' stroke='%23FF9D5C' stroke-opacity='.4' stroke-width='1.6'/%3E%3Cpath d='M200 620 C 460 540, 700 610, 960 540 S 1290 440, 1400 470' fill='none' stroke='%23FFFFFF' stroke-opacity='.4' stroke-width='1.4'/%3E%3C/svg%3E") right bottom / min(1500px, 115vw) auto no-repeat,
+    radial-gradient(1000px 620px at 42% 26%, rgba(255, 248, 240, 0.92), rgba(255, 248, 240, 0) 72%),
+    radial-gradient(1100px 760px at 100% 100%, rgba(246, 150, 84, 0.42), rgba(246, 150, 84, 0) 70%),
+    linear-gradient(160deg, #FEECDC 0%, #FCDBBF 52%, #F8C79F 100%);
+  background-attachment: fixed;
+}
+
+/* ---------- Que las tarjetas puedan achicarse al reducir la ventana ----------
+   Sin esto, una gráfica ya dibujada "empuja" a su tarjeta y la página se desborda
+   hacia la derecha al pasar de una ventana ancha a una angosta. */
+.kpi-grid > *, .fila-graficas > *, .control-panel-grid > * { min-width: 0; }
+.ng-mini-lienzo, .db-lienzo { min-width: 0; max-width: 100%; }
+
+/* ---------- Menú lateral: el mismo fondo de la página (se ve a través) ----------
+   El fondo de la página es fijo, así que el menú y el contenido se ven como una
+   sola pieza continua. En celular, donde el menú se abre encima del contenido,
+   lleva el mismo degradé pero sólido para que se lea. */
+.sidebar {
+  background: transparent;
+  box-shadow: 1px 0 0 rgba(150, 90, 50, 0.1);
+}
+@media (max-width: 900px) {
+  .sidebar { background: linear-gradient(160deg, #FEECDC 0%, #FCDBBF 52%, #F8C79F 100%); }
+}
+
+/* ---------- Menú lateral ordenado por grupos (Principal, Operaciones, Análisis, Reportes, Herramientas) ---------- */
+.sb-nav .sb-etiqueta {
+  display: flex; align-items: center; gap: 8px;
+  margin: 14px 8px 4px;
+  color: #9C7C66;
+}
+.sb-nav .sb-etiqueta::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(90deg, rgba(156, 124, 102, 0.35), rgba(156, 124, 102, 0));
+}
+.sb-nav .sb-item { padding: 9px 14px; margin: 1px 0; gap: 12px; font-size: 14px; }
+.sb-nav .sb-item svg { width: 20px; height: 20px; }
+button.sb-item:hover { background: rgba(169, 87, 63, 0.09); color: var(--terracota-osc); }
+button.sb-item:focus-visible { outline: 2px solid var(--terracota); outline-offset: 2px; }
+.sb-nav .sb-item.sb-activo svg { stroke-width: 2; }
+.sb-nav .sb-item.sb-pronto { gap: 10px; }
+.sb-nav .sb-item.sb-pronto span { white-space: nowrap; }
+.sb-nav .sb-item.sb-pronto small { padding: 2px 7px; font-size: 10px; }
+
+/* ==========================================================================
+   Gráficas rediseñadas: cifra clara, tarjetitas de datos y gráficos con volumen
+   ========================================================================== */
+.ng-cifra small { display: block; margin-top: 1px; font: 500 11.5px/1.3 var(--font-body); color: var(--tinta-suave); }
+
+/* Tarjetitas de datos (en lugar de párrafos) */
+.ng-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 6px; margin: 8px 0 0; }
+.ng-tile {
+  min-width: 0;
+  padding: 7px 10px 8px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAF4EC 100%);
+  border: 1px solid #EFE2D2;
+  box-shadow: 0 2px 6px rgba(120, 80, 50, 0.06);
+}
+.ng-tile small { display: block; font: 600 9.5px/1.2 var(--font-body); letter-spacing: 0.05em; text-transform: uppercase; color: #9A8778; }
+.ng-tile b { display: block; margin-top: 2px; font: 700 13.5px/1.25 var(--font-display); color: #2B211C; overflow-wrap: anywhere; }
+.ng-tile b.ng-t-ing { color: #1D4ED8; }
+.ng-tile b.ng-t-egr { color: #EA580C; }
+
+/* Lo que solo se ve con «Más detalles» */
+.ng-card:not(.ng-abierto) .ng-detalle, .ng-card:not(.ng-abierto) .ng-tira { display: none; }
+.ng-detalle { margin-top: 10px; }
+.ng-detalle:empty { display: none; }
+.ng-det-tit { margin: 0 0 6px; font: 600 11px var(--font-body); letter-spacing: 0.05em; text-transform: uppercase; color: #9A8778; }
+.ng-detalle .db-lienzo { height: 150px; }
+
+/* Medidor (medio anillo) de «¿Cuánto me falta…?» */
+.ng-medidor-lienzo { height: 150px; }
+.ng-lienzo-vacio { opacity: 0.4; }
+
+/* Anillo con su lista al lado */
+.ng-dona-fila { display: grid; grid-template-columns: minmax(104px, 40%) minmax(0, 1fr); gap: 10px; align-items: center; margin-top: 10px; }
+.ng-dona-fila[hidden] { display: none; }
+.ng-dona { position: relative; aspect-ratio: 1; width: 100%; max-width: 168px; margin: 0 auto; filter: drop-shadow(0 6px 8px rgba(90, 50, 30, 0.16)); }
+.ng-rank { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.ng-rank li {
+  --w: 50%;
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 3px;
+  font-size: 11.5px;
+  color: #3B2F2A;
+  border-radius: 8px;
+  padding: 2px 3px;
+}
+.ng-rank li i {
+  grid-row: 1 / span 2; grid-column: 1;
+  width: 20px; height: 20px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--c); color: #fff;
+  font: 700 10px/1 var(--font-body); font-style: normal;
+  box-shadow: 0 2px 5px color-mix(in srgb, var(--c) 45%, transparent);
+}
+.ng-rank .ng-rk-n { grid-column: 2; grid-row: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.ng-rank li b { grid-column: 3; grid-row: 1; font-weight: 700; white-space: nowrap; text-align: right; }
+.ng-rank li em { grid-column: 3; grid-row: 2; font-style: normal; font-size: 10px; color: var(--tinta-suave); white-space: nowrap; text-align: right; line-height: 1; }
+.ng-rank li s { grid-column: 2; grid-row: 2; height: 5px; border-radius: 3px; background: #F1E8DD; text-decoration: none; position: relative; overflow: hidden; }
+.ng-rank li s::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w); border-radius: 3px; background: linear-gradient(90deg, color-mix(in srgb, var(--c) 60%, #fff), var(--c)); }
+.ng-rank li[data-cat] { cursor: pointer; }
+.ng-rank li[data-cat]:hover, .ng-rank li.ng-rk-activa { background: color-mix(in srgb, var(--c) 10%, #fff); }
+.ng-rank li:focus-visible { outline: 2px solid var(--c); outline-offset: 1px; }
+.ng-rank-sec { margin-top: 2px; }
+.ng-detalle .ng-rank { gap: 6px; }
+
+/* Medidor del punto de equilibrio (mes elegido) */
+.ng-medidor { padding: 8px 10px 9px; border-radius: 12px; background: color-mix(in srgb, var(--c) 7%, #fff); border: 1px solid color-mix(in srgb, var(--c) 30%, #fff); }
+.ng-med-cab { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+.ng-med-cab span { font-weight: 600; color: #3B2F2A; }
+.ng-med-cab b { color: var(--c); }
+.ng-med-pista { position: relative; height: 12px; margin: 7px 0 4px; border-radius: 999px; background: #EDE3D8; overflow: visible; }
+.ng-med-pista i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: linear-gradient(90deg, color-mix(in srgb, var(--c) 55%, #fff), var(--c)); box-shadow: 0 2px 6px color-mix(in srgb, var(--c) 40%, transparent); }
+.ng-med-pista s { position: absolute; top: -4px; bottom: -4px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: #1E3A8A; text-decoration: none; }
+.ng-med-pie { display: flex; justify-content: space-between; gap: 8px; font-size: 10.5px; color: var(--tinta-suave); }
+
+/* ==========================================================================
+   Mis gráficos: círculos con aro de colores, volumen y un poco de movimiento
+   Cada círculo lleva su pareja de colores (los mismos de su gráfico vivo).
+   ========================================================================== */
+.flip-card { --t1: #16A34A; --t2: #F97316; --ts: #FFF3E4; }
+.flip-card[data-tarjeta="forma-pago"] { --t1: #E53935; --t2: #FFB300; --ts: #FFF5D6; }
+.flip-card[data-tarjeta="top-deudor"] { --t1: #16A34A; --t2: #2563EB; --ts: #E8F2FF; }
+
+.cp-sub {
+  margin-top: -6px;
+  max-width: 92%;
+  font: 500 12px/1.3 var(--font-body);
+  text-align: center;
+  color: #8A7A70;
+  transition: color 0.35s ease;
+}
+.flip-card:hover .cp-sub, .flip-card:focus-visible .cp-sub { color: color-mix(in srgb, var(--t1) 45%, #4A3C35); }
+
+.cp-medallon { isolation: isolate; }
+.cp-medallon::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  z-index: -1;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--t1), var(--t2), var(--t1));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.flip-card:hover .cp-medallon,
+.flip-card:focus-visible .cp-medallon {
+  transform: translateY(-9px) scale(1.08) rotateX(7deg);
+  border-color: transparent;
+  background: radial-gradient(circle at 30% 22%, #FFFFFF 0%, var(--ts) 58%, color-mix(in srgb, var(--t2) 20%, #fff) 100%);
+  box-shadow:
+    0 20px 30px color-mix(in srgb, var(--t1) 26%, transparent),
+    0 4px 0 -1px color-mix(in srgb, var(--t2) 35%, transparent),
+    inset 0 -9px 16px color-mix(in srgb, var(--t2) 22%, transparent),
+    inset 0 7px 10px rgba(255, 255, 255, 0.95);
+}
+.flip-card:hover .cp-medallon::before,
+.flip-card:focus-visible .cp-medallon::before { opacity: 1; animation: cpAro 3.4s linear infinite; }
+.flip-card:hover .cp-label, .flip-card:focus-visible .cp-label { color: color-mix(in srgb, var(--t1) 60%, #2B211C); }
+
+/* El dibujo de adentro flota y proyecta sombra, como si estuviera despegado del círculo */
+.cp-lienzo canvas { transition: filter 0.4s ease; }
+.flip-card:hover .cp-lienzo canvas, .flip-card:focus-visible .cp-lienzo canvas { filter: drop-shadow(0 5px 3px rgba(60, 30, 20, 0.3)); }
+.flip-card:hover .cp-lienzo, .flip-card:focus-visible .cp-lienzo { animation: cpFlotar 2.6s ease-in-out infinite; }
+
+@keyframes cpAro { to { transform: rotate(360deg); } }
+@keyframes cpFlotar { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-3px) scale(1.04); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .flip-card:hover .cp-medallon::before, .flip-card:focus-visible .cp-medallon::before,
+  .flip-card:hover .cp-lienzo, .flip-card:focus-visible .cp-lienzo { animation: none; }
+}
+
+/* ==========================================================================
+   Menú lateral: cada grupo con su propio lugar
+   «Ir a» = lleva a una parte de la página · «Informes» = abre una ventana ·
+   «Datos» = traer y guardar información · «Seguridad» = copias
+   ========================================================================== */
+.sb-nav .sb-acciones {
+  gap: 2px;
+  padding: 5px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(169, 87, 63, 0.14);
+  margin-bottom: 7px;
+}
+.sb-nav .sb-acciones .sb-accion:hover { background: rgba(169, 87, 63, 0.1); }
+.sb-nav .sb-acciones .status-badge { margin: 0 0 6px 12px; }
+.sb-nav > .sb-item { margin-bottom: 1px; }
+
+/* Importar / exportar: los puntos de Ingresos y de Egresos bien marcados */
+.sidebar .dropdown-grupo {
+  display: flex; align-items: center; gap: 8px;
+  margin: 10px 0 5px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  color: #fff;
+  font: 700 11.5px var(--font-body);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  box-shadow: 0 3px 8px rgba(60, 40, 30, 0.18);
+}
+.sidebar .dropdown-grupo::before { content: none; }
+.sidebar .dropdown-grupo-ingresos { background: linear-gradient(90deg, #2E9E5B, #5DBF7E); }
+.sidebar .dropdown-grupo-egresos { background: linear-gradient(90deg, #E8590C, #F79A4A); }
+.sidebar .dropdown-grupo-ingresos::after { content: "↓ entra dinero"; margin-left: auto; font: 600 10px var(--font-body); letter-spacing: 0.02em; text-transform: none; opacity: 0.92; }
+.sidebar .dropdown-grupo-egresos::after { content: "↑ sale dinero"; margin-left: auto; font: 600 10px var(--font-body); letter-spacing: 0.02em; text-transform: none; opacity: 0.92; }
+.sidebar .dropdown-grupo-ingresos ~ .dropdown-item { border-left: 4px solid #4CAF73; border-radius: 4px 8px 8px 4px; margin-left: 2px; }
+.sidebar .dropdown-grupo-egresos ~ .dropdown-item { border-left: 4px solid #F27B2A; }
+.sidebar #btnVerHistorial, .sidebar #btnBorrarTodo { border-left: none !important; margin-left: 0; border-radius: 8px; }
+.sidebar .dropdown-grupo-ingresos ~ .dropdown-item:hover { background: rgba(76, 175, 115, 0.13); }
+.sidebar .dropdown-grupo-egresos ~ .dropdown-item:hover { background: rgba(242, 123, 42, 0.13); }
+.sidebar #btnBorrarTodo:hover { background: var(--peligro-tint); }
+
+/* ==========================================================================
+   Las 6 gráficas: qué muestra, lectura de hoy y barras de estado
+   ========================================================================== */
+.ng-concepto {
+  margin: 8px 0 0;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: #F3F8FD;
+  border: 1px solid #DCE8F5;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #37474F;
+}
+.ng-concepto b { color: #1E3A5F; font-weight: 600; }
+.ng-pie-lectura:empty { display: none; }
+.ng-pie-lectura { margin-top: 10px; }
+.ng-lectura {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border-left: 4px solid var(--c, #1E88E5);
+  background: color-mix(in srgb, var(--c, #1E88E5) 7%, #fff);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #2F2621;
+}
+.ng-lectura > b:first-child { color: var(--c, #1E88E5); }
+.ng-abajo .ng-lectura:first-child, .ng-pie-lectura .ng-lectura { margin-top: 0; }
+.ng-linea { width: 14px !important; height: 3px !important; border-radius: 2px !important; }
+
+/* Barras con su valor a la derecha (cobertura de egresos) */
+.ng-barras { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 13px; }
+.ng-barras li { display: grid; grid-template-columns: minmax(96px, 36%) minmax(0, 1fr) 50px; gap: 10px; align-items: center; font-size: 12.5px; }
+.ng-b-n { color: #37474F; font-weight: 500; line-height: 1.25; }
+.ng-b-pista { position: relative; height: 12px; border-radius: 999px; background: #EEF0F2; }
+.ng-b-pista i { position: absolute; inset: 0 auto 0 0; width: var(--w); border-radius: 999px; background: linear-gradient(90deg, color-mix(in srgb, var(--c) 65%, #fff), var(--c)); }
+.ng-b-pista s { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; border-radius: 2px; background: #263238; text-decoration: none; }
+.ng-barras b { text-align: right; font-weight: 700; }
+.ng-mini-lienzo { min-height: 150px; }
+.sidebar .dropdown-grupo::after { white-space: nowrap; font-size: 9.5px; }
+.sidebar .dropdown-grupo { white-space: nowrap; }
+
+/* ==========================================================================
+   Jerarquía de letras: cada nivel un poco más pequeño que el anterior
+   título de sección 23 › título de tarjeta 19 › cifra principal 17 › cifras
+   de las tarjetitas 13 › textos 12,5. Los títulos se ven vistosos (negrita,
+   color de la marca) sin gritar.
+   ========================================================================== */
+.kpi-title, .sec-titulo, .control-panel-title {
+  font: 700 23px/1.2 var(--font-display);
+  color: var(--terracota-osc);
+  letter-spacing: 0.005em;
+}
+.control-panel-subtitle, .kpi-subtitle { font-size: 13px; line-height: 1.5; color: #5A4A40; }
+
+.card-titulo, .kc-pregunta {
+  font: 700 19px/1.2 var(--font-display);
+  color: var(--terracota-osc);
+  letter-spacing: 0.005em;
+}
+.card-sub, .kc-tecnico { font-size: 12.5px; line-height: 1.4; color: #6A5A50; }
+
+/* Cifra principal de cada tarjeta: claramente menor que su título */
+.ng-cifra { font: 700 17px/1.25 var(--font-display); }
+.kc-cifra, #sec-indicadores .kc-cifra { font: 700 17px/1.25 var(--font-display); margin-top: 6px; }
+#sec-indicadores .kc-cifra small, .ng-cifra small { font-size: 12px; font-weight: 500; color: var(--tinta-suave); }
+.ng-plata-cifra { font-size: 17px !important; }
+.kc-unidad { margin: -4px 0 0; font-size: 12.5px; }
+.kc-frase { font-size: 12.5px; }
+
+/* Miniatura al lado del título: con aire para que la pieza 3D no se corte */
+.card-cab .ico3d, .kc-cab .ico3d { --t: 46px; margin-right: 2px; }
+.card-cab, .kc-cab { align-items: center; }
+
+/* ---------- Sello del toro del pie de página: un tercio más chico (92 px → 61 px) ---------- */
+.pie-sello { width: 61px; height: 61px; }
+@media (max-width: 560px) { .pie-sello { width: 51px; height: 51px; } }
+
+/* ==========================================================================
+   Ladrillos cerámicos más vendidos: cifras arriba, reparto en una barra y una tarjeta por código
+   ========================================================================== */
+.pd-resumen { margin-bottom: 16px; }
+.pd-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.pd-kpis > div {
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAF4EC 100%);
+  border: 1px solid #EFE2D2;
+  box-shadow: 0 2px 8px rgba(120, 80, 50, 0.07);
+  min-width: 0;
+}
+.pd-kpis small { display: block; font: 600 10.5px/1.2 var(--font-body); letter-spacing: 0.05em; text-transform: uppercase; color: #9A8778; }
+.pd-kpis b { display: block; margin-top: 3px; font: 700 17px/1.2 var(--font-display); color: #2B211C; overflow-wrap: anywhere; }
+.pd-reparto { display: flex; height: 16px; margin-top: 14px; border-radius: 999px; overflow: hidden; background: #EEE6DA; box-shadow: inset 0 1px 3px rgba(60, 40, 30, 0.18); }
+.pd-reparto i { display: block; height: 100%; min-width: 3px; border-right: 2px solid #fff; }
+.pd-reparto i:last-child { border-right: none; }
+.pd-leyenda { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 9px 0 0; padding: 0; font-size: 12.5px; color: #4A3C35; }
+.pd-leyenda li { display: inline-flex; align-items: center; gap: 6px; }
+.pd-leyenda i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+.pd-leyenda b { font-weight: 700; color: #2B211C; }
+
+.pd-lista { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 14px; }
+.pd-card {
+  --c: #F45F00;
+  position: relative;
+  padding: 14px 16px 15px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid #EFE2D2;
+  border-top: 5px solid var(--c);
+  box-shadow: 0 6px 16px rgba(90, 50, 30, 0.09);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.pd-card:hover { transform: translateY(-3px); box-shadow: 0 12px 26px rgba(90, 50, 30, 0.16); }
+.pd-cab { display: flex; align-items: center; gap: 11px; }
+.pd-puesto {
+  flex: none; width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--c) 78%, #fff), var(--c));
+  color: #fff; font: 700 16px var(--font-display);
+  box-shadow: 0 4px 9px color-mix(in srgb, var(--c) 45%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+.pd-nombre { flex: 1; min-width: 0; }
+.pd-nombre strong { display: block; font: 700 17px/1.15 var(--font-display); color: #2B211C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pd-nombre small { display: block; margin-top: 2px; font-size: 12px; color: #6A5A50; }
+.pd-var { flex: none; padding: 3px 9px; border-radius: 999px; background: #F3EEE8; font: 600 11px var(--font-body); color: #6A5A50; white-space: nowrap; }
+.pd-var.up { background: #E3F4E8; color: #17663A; }
+.pd-var.down { background: #FDE7E4; color: #A32D21; }
+.pd-barra { height: 9px; margin: 12px 0 11px; border-radius: 999px; background: #F1E8DD; overflow: hidden; }
+.pd-barra i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, color-mix(in srgb, var(--c) 60%, #fff), var(--c)); }
+.pd-cifras { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.pd-cifras > div { padding: 7px 9px; border-radius: 11px; background: color-mix(in srgb, var(--c) 7%, #fff); border: 1px solid color-mix(in srgb, var(--c) 22%, #fff); min-width: 0; }
+.pd-cifras small { display: block; font: 600 10px/1.2 var(--font-body); letter-spacing: 0.05em; text-transform: uppercase; color: #8A7A70; }
+.pd-cifras b { display: block; margin-top: 2px; font: 700 13.5px/1.25 var(--font-display); color: #2B211C; overflow-wrap: anywhere; }
+.pd-precio { margin-top: 13px; padding-top: 11px; border-top: 1px dashed #E5D8CB; }
+.pd-precio-tit { margin: 0 0 8px; font: 600 12.5px var(--font-body); color: #2B211C; }
+.pd-precio-tit span { font-weight: 400; color: #8A7A70; margin-left: 6px; }
+.pd-rango { display: flex; align-items: center; gap: 9px; }
+.pd-rango em { font: 600 11px var(--font-body); font-style: normal; color: #6A5A50; white-space: nowrap; }
+.pd-pista { position: relative; flex: 1; height: 9px; border-radius: 999px; background: linear-gradient(90deg, color-mix(in srgb, var(--c) 22%, #fff), var(--c)); }
+.pd-pista s { position: absolute; top: 50%; text-decoration: none; transform: translate(-50%, -50%); }
+.pd-prom { width: 15px; height: 15px; border-radius: 50%; background: #032440; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(3, 36, 64, 0.45); z-index: 2; }
+.pd-hab { width: 3px; height: 17px; border-radius: 2px; background: #2B211C; opacity: 0.75; z-index: 1; }
+.pd-precio-leyenda { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 9px 0 0; font-size: 12px; color: #4A3C35; }
+.pd-precio-leyenda i { display: inline-block; }
+.pd-l-prom { width: 10px; height: 10px; border-radius: 50%; background: #032440; }
+.pd-l-hab { width: 3px; height: 12px; border-radius: 2px; background: #2B211C; opacity: 0.75; margin-left: 8px; }
+.pd-precio-leyenda b { color: #2B211C; }
+.pd-desc, .pd-fijo { margin: 6px 0 0; font-size: 12.5px; line-height: 1.4; color: #4A3C35; }
+.pd-desc b, .pd-fijo b { color: var(--c); }
+@media (max-width: 900px) { .pd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.pd-cab { flex-wrap: wrap; row-gap: 7px; }
+.pd-nombre { flex: 1 1 calc(100% - 50px); }
+.pd-var { margin-left: 45px; }
+
+/* ==========================================================================
+   Tarjetitas de datos: todas iguales, con su color y el número siempre en una línea
+   ========================================================================== */
+.ng-tiles {
+  display: grid;
+  grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 9px;
+  margin: 10px 0 0;
+  container-type: inline-size;
+}
+.ng-tile {
+  --tc: #7A5C48;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 5px;
+  min-width: 0;
+  padding: 9px 11px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--tc) 12%, #fff);
+  border: 1px solid color-mix(in srgb, var(--tc) 40%, #fff);
+  border-top: 4px solid var(--tc);
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--tc) 14%, transparent);
+}
+/* rótulo: puede tener hasta dos líneas y siempre deja el número en la misma altura */
+.ng-tile small {
+  display: block;
+  min-height: 2.35em;
+  font: 700 10.5px/1.2 var(--font-body);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--tc) 66%, #24180F);
+}
+.ng-tile b {
+  display: block;
+  font: 800 clamp(11px, 4.3cqi, 15.5px)/1.15 var(--font-display);
+  color: color-mix(in srgb, var(--tc) 80%, #000);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ng-tile em {
+  display: block;
+  margin-top: -3px;
+  font: 600 11px/1.2 var(--font-body);
+  font-style: normal;
+  color: #4A3C35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   «Salud de tu negocio»: el título entra siempre en una sola fila
+   ========================================================================== */
+.kpi-card { container-type: inline-size; }
+.kc-cab { align-items: center; gap: 12px; }
+.kc-titulos { min-width: 0; }
+.kc-pregunta {
+  white-space: nowrap;
+  /* la letra se ajusta al ancho de la tarjeta (máximo 19 px) para no partirse en filas */
+  font-size: clamp(13px, calc((100cqi - 66px) / 15.6), 19px);
+}
+.kc-estado-fila { margin-top: 6px; }
+.kc-tecnico { font-size: 12.5px; color: #4A3C35; }
+.kc-unidad { font-size: 13px; color: #4A3C35; }
+.kc-cifra small { color: #4A3C35; }
+
+/* ==========================================================================
+   «¿Qué muestra?»: ventanita chica que se abre al tocarla
+   ========================================================================== */
+.ng-info { margin: 9px 0 0; }
+.ng-info-b {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 12px 3px 4px;
+  border-radius: 999px;
+  border: 1px solid #C5D5E8;
+  background: #F3F8FD;
+  color: #2F4B68;
+  font: 600 11.5px var(--font-body);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.ng-info-b span {
+  width: 18px; height: 18px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: #5B9BDB;
+  color: #fff;
+  font: italic 700 12px/1 Georgia, "Times New Roman", serif;
+}
+.ng-info-b:hover, .ng-info-b[aria-expanded="true"] { background: #E3EEFA; border-color: #8FB4DC; }
+.ng-info-b:focus-visible { outline: 2px solid #2563EB; outline-offset: 2px; }
+.ng-info-p {
+  margin: 6px 0 0;
+  padding: 7px 11px;
+  border-radius: 10px;
+  background: #F3F8FD;
+  border: 1px solid #DCE8F5;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #37474F;
+}
+.ng-info-p[hidden] { display: none; }
+.ng-info-p b { color: #1E3A5F; font-weight: 600; }
+
+/* ==========================================================================
+   Resultado del mes · Cobertura de egresos · Concentración de clientes
+   Todo bien alineado entre las tres tarjetas
+   ========================================================================== */
+.fila-graficas > .ng-card { container-type: inline-size; }
+/* título en una sola fila (la letra se ajusta al ancho de la tarjeta, máximo 19 px) */
+.fila-graficas > .ng-card .card-titulo {
+  white-space: nowrap;
+  font-size: clamp(13px, calc((100cqi - 96px) / 13.6), 19px);
+}
+/* misma altura de cabecera y de cifra: así las tarjetitas de las tres empiezan a la misma altura */
+.fila-graficas > .ng-card .card-cab { min-height: 66px; }
+.fila-graficas > .ng-card .ng-cifra { min-height: 46px; display: flex; flex-direction: column; justify-content: center; }
+
+/* el gráfico de cobertura crece y llena el espacio que antes quedaba vacío */
+.ng-crece { position: relative; flex: 1 1 190px; min-height: 190px; margin-top: 10px; }
+.ng-crece canvas { display: block; }
+.ng-crece.ng-lienzo-vacio { opacity: 0.4; }
+.fila-graficas > .ng-card #ngFaltaBarras { margin-top: 12px; }
+
+/* las tres lecturas quedan a la misma altura y del mismo alto */
+.fila-graficas > .ng-card .ng-pie-lectura { margin-top: auto; padding-top: 10px; display: flex; min-height: 116px; }
+.fila-graficas > .ng-card .ng-pie-lectura .ng-lectura { flex: 1; margin: 0; }
+
+/* anillo de clientes: una tercera parte más grande y con más presencia */
+.ng-dona-fila { grid-template-columns: minmax(139px, 46%) minmax(0, 1fr); }
+.ng-dona { max-width: 224px; filter: drop-shadow(0 10px 12px rgba(60, 40, 30, 0.24)); }
+
+/* ---------- Pie de página: «CRF & LADRILLOS S.A.C.» y «Gestión de ventas» más grandes y visibles ---------- */
+.pie-items { gap: 30px; }
+.pie-item { font: 700 16px var(--font-display); color: var(--terracota-osc); letter-spacing: 0.01em; gap: 10px; }
+.pie svg { width: 32px; height: 32px; stroke-width: 2.1; }
+.pie-pildora svg { width: 19px; height: 19px; stroke-width: 1.7; }
+
+/* ---------- Pie de página: letras y rayitas un tercio más chicas (16 → 11 px, 32 → 21 px) ---------- */
+.pie-item { font-size: 11px; gap: 7px; }
+.pie svg { width: 21px; height: 21px; stroke-width: 2; }
+
+/* ---------- Aviso de datos repetidos (duplicados.js) ---------- */
+.ng-aviso-dup { background: linear-gradient(135deg, #FFF1EE 0%, #FDE1DB 100%); border-color: #F2A99B; }
+.ng-aviso-dup .ng-aviso-ico { background: linear-gradient(135deg, #EF4444, #B91C1C); font: 800 20px/1 var(--font-display); }
+
+/* Mis gráficos: en pantallas angostas la tarjeta crece un poco para que nunca se corte la última línea
+   (en pantalla grande mide 280 px y no cambia) */
+.control-panel-grid .flip-card { min-height: 272px; }
+
+/* ==========================================================================
+   Mis gráficos: las tres frases de abajo con la misma letra, completas y a la misma altura
+   (círculo arriba, título en un espacio de 2 líneas, subtítulo y la frase en su recuadro)
+   ========================================================================== */
+.control-panel-grid .flip-card { min-height: 304px; }
+.control-panel-grid .flip-card-front { justify-content: flex-start; gap: 9px; padding-top: 10px; }
+.control-panel-grid .cp-medallon { flex: none; }
+.control-panel-grid .cp-label,
+.control-panel-grid .cp-label.cp-label-largo {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 2.4em;
+  max-width: 96%;
+  font-size: clamp(14px, 1.2vw, 17px);
+  line-height: 1.2;
+}
+.control-panel-grid .cp-sub { min-height: 1.3em; margin-top: -4px; }
+.control-panel-grid .cp-value {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+  max-width: 94%;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgba(169, 87, 63, 0.08);
+  border: 1px solid rgba(169, 87, 63, 0.2);
+  font: 600 13px/1.35 var(--font-body);
+  color: #5A3526;
+  text-align: center;
+  text-wrap: balance;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+.flip-card:hover .cp-value, .flip-card:focus-visible .cp-value {
+  background: color-mix(in srgb, var(--t1) 10%, #fff);
+  border-color: color-mix(in srgb, var(--t1) 40%, #fff);
+  color: color-mix(in srgb, var(--t1) 65%, #2B211C);
+}
+/* el subtítulo reserva siempre dos líneas: así las tres frases de abajo empiezan a la misma altura */
+.control-panel-grid .cp-sub { min-height: 2.6em; display: flex; align-items: flex-start; justify-content: center; line-height: 1.3; }
+.control-panel-grid .flip-card { min-height: 312px; }

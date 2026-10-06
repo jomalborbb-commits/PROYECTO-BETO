@@ -1,0 +1,290 @@
+/* ==========================================================================
+   modelos.css — Los 7 modelos simples de gráficas (negocio.js y dashboard.js)
+   Poco texto y solo datos: período, cifra con su píldora, gráfica simple.
+   ========================================================================== */
+.md-oculto { display: none !important; }
+
+.md-per { margin: 0 0 2px; font-size: 12px; font-weight: 500; color: #8A7A70; font-variant-numeric: tabular-nums; }
+.md-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.md-cab .md-per { margin: 0; }
+
+.md-stat { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin: 0 0 12px; }
+.md-stat b { font-size: 22px; font-weight: 600; line-height: 1.2; color: #2B211C; font-variant-numeric: tabular-nums; }
+.md-txt { font-size: 13px; color: #6A5A50; }
+
+.md-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.md-pill i { font-style: normal; font-size: 12.5px; }
+.md-pill-mal { background: #FCEBEB; color: #A32D2D; }
+.md-pill-bien { background: #EAF3DE; color: #3B6D11; }
+.md-pill-neu { background: #F3ECE4; color: #6A5A50; }
+.md-pill-lg { padding: 5px 12px; font-size: 13px; }
+
+/* Filas con barra (gastos, clientes, ladrillos) */
+.md-filas { display: flex; flex-direction: column; gap: 10px; }
+.md-fila-l { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 4px; font-size: 13px; }
+.md-fila-n { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: #2B211C; }
+.md-fila-n small { margin-left: 6px; font-size: 11.5px; font-weight: 400; color: #8A7A70; }
+.md-fila-v { flex: none; font-size: 12px; color: #6A5A50; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.md-fila-b { height: 7px; border-radius: 4px; background: #F1EAE2; overflow: hidden; }
+.md-fila-b i { display: block; height: 100%; border-radius: 4px; }
+.md-fila[data-cat] { margin: 0 -6px; padding: 3px 6px; border-radius: 8px; cursor: pointer; transition: background 0.15s ease; }
+.md-fila[data-cat]:hover, .md-fila.md-activa { background: #FBF3EB; }
+.md-fila[data-cat]:focus-visible { outline: 2px solid #A9573F; outline-offset: 1px; }
+
+/* Cifra grande del modelo 5 */
+.md-grande { margin: 2px 0 12px; font-size: 24px; font-weight: 600; line-height: 1.2; color: #2B211C; }
+.md-grande span { font-size: 15px; font-weight: 400; color: #6A5A50; }
+
+/* Modelo 4: franja de meses */
+.md-strip { display: flex; gap: 3px; height: 34px; margin: 2px 0 6px; border-radius: 8px; overflow: hidden; }
+.md-strip button { flex: 1; min-width: 0; padding: 0; border: 0; display: flex; align-items: center; justify-content: center; font: 600 11px/1 Poppins, Inter, sans-serif; cursor: pointer; transition: filter 0.15s ease; }
+.md-strip button:hover { filter: brightness(1.08); }
+.md-strip button.md-sel { box-shadow: inset 0 0 0 2px rgba(43, 33, 28, 0.6); }
+.md-leyenda { display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 600; }
+.md-leyenda i { display: inline-block; width: 8px; height: 8px; margin: 0 5px; border-radius: 50%; }
+
+/* Modelo 3: medidor */
+.md-gauge-caja { display: flex; justify-content: center; margin: 2px 0 4px; }
+.md-gauge { width: 100%; max-width: 250px; height: auto; overflow: visible; }
+.md-g-pista { fill: none; stroke: #EFE6DC; stroke-width: 14; stroke-linecap: round; stroke-dasharray: 1.2 6.4; }
+.md-g-borde { fill: none; stroke: #CDBFB3; stroke-width: 1; opacity: 0.7; }
+.md-g-valor { fill: none; stroke-width: 14; stroke-linecap: round; }
+.md-g-marca { fill: #A89A8E; }
+.md-g-punta { stroke: #fff; stroke-width: 2; }
+.md-g-num { font: 600 26px Poppins, Inter, sans-serif; fill: #2B211C; }
+.md-g-sub { font: 400 10.5px Poppins, Inter, sans-serif; fill: #6A5A50; }
+.md-g-et { font: 500 9.5px Poppins, Inter, sans-serif; fill: #9A8B7F; }
+.md-pie { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: #6A5A50; font-variant-numeric: tabular-nums; }
+.md-nota { margin: 8px 0 0; font-size: 12px; color: #8A7A70; }
+
+/* Modelo 7: círculo */
+.md-m7 { display: flex; align-items: center; gap: 18px; }
+.md-m7-dona { position: relative; flex: none; width: 124px; height: 124px; }
+.md-m7-centro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none; }
+.md-m7-centro b.md-largo { font-size: 13px; }
+.md-m7-centro b { max-width: 84px; font-size: 16px; line-height: 1.15; font-weight: 600; color: #2B211C; font-variant-numeric: tabular-nums; }
+.md-m7-centro span { max-width: 78px; font-size: 10px; line-height: 1.25; color: #6A5A50; }
+.md-m7-leg { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.md-m7-leg li { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+.md-m7-leg i { flex: none; width: 9px; height: 9px; border-radius: 50%; }
+.md-m7-leg span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #2B211C; }
+.md-m7-leg em { font-style: normal; font-size: 11.5px; color: #6A5A50; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* Tamaños de los lienzos de los modelos 1 y 2 */
+.fila-graficas > .ng-card .md-lienzo-m1, .md-lienzo-m1 { height: 104px !important; min-height: 0 !important; margin-top: 2px !important; flex: none !important; }
+.ng-seis .md-lienzo-m2, .md-lienzo-m2 { height: 190px !important; }
+
+/* «Salud de tu negocio»: las tres tarjetas con la misma altura */
+#sec-indicadores .kpi-grid { align-items: stretch; }
+
+/* Encabezados de «Salud de tu negocio» sin subtítulo */
+.kc-tecnico:empty { display: none; }
+#sec-indicadores .kpi-card .kc-cab { margin-bottom: 8px; }
+
+/* Ladrillos cerámicos más vendidos: una sola lista simple */
+.pd-lista.md-pd-lista { display: block; }
+.pd-lista.md-pd-lista > li { list-style: none; }
+.md-pd-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+
+@media (max-width: 420px) {
+  .md-m7 { flex-direction: column; align-items: stretch; }
+  .md-m7-dona { align-self: center; }
+}
+
+/* ==========================================================================
+   Ronda 2: todo un poco más grande y en la MISMA proporción (≈ +15%),
+   con aspecto 3D (relieve y sombra suave, sin movimiento)
+   ========================================================================== */
+.md-per { font-size: 13px; }
+.md-stat b { font-size: 26px; }
+.md-txt { font-size: 14.5px; }
+.md-pill { padding: 4px 12px; font-size: 13px; }
+.md-pill-lg { padding: 6px 14px; font-size: 14px; }
+.md-fila-l { font-size: 14.5px; margin-bottom: 6px; }
+.md-fila-n small { font-size: 12.5px; }
+.md-fila-v { font-size: 13.5px; }
+.md-filas { gap: 13px; }
+.md-grande { font-size: 28px; }
+.md-grande span { font-size: 16.5px; }
+.md-strip { height: 42px; gap: 4px; }
+.md-strip button { font-size: 12.5px; }
+.md-leyenda { font-size: 12.5px; }
+.md-m7-dona { width: 150px; height: 150px; }
+.md-m7-centro b { max-width: 104px; font-size: 19px; }
+.md-m7-centro b.md-largo { font-size: 15px; }
+.md-m7-centro span { max-width: 96px; font-size: 11.5px; }
+.md-m7-leg li { font-size: 14px; }
+.md-m7-leg em { font-size: 13px; }
+.md-m7-leg i { width: 11px; height: 11px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); }
+
+/* Relieve 3D: brillo arriba, sombra abajo */
+.md-fila-b { height: 11px; border-radius: 6px; box-shadow: inset 0 1px 2px rgba(60, 35, 20, 0.12); }
+.md-fila-b i, .md-b3-b i, .mg-barra i, .mg-rk i, .mg-col-b i {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0) 55%, rgba(0, 0, 0, 0.12));
+  box-shadow: 0 2px 5px rgba(60, 30, 15, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.md-fila-b i { border-radius: 6px; }
+.md-strip { overflow: visible; }
+.md-strip button {
+  border-radius: 7px;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 55%, rgba(0, 0, 0, 0.14));
+  box-shadow: 0 3px 7px rgba(60, 30, 15, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+.md-strip button.md-sel { box-shadow: 0 3px 7px rgba(60, 30, 15, 0.25), inset 0 0 0 2px rgba(43, 33, 28, 0.65); }
+.md-leyenda i, .md-leyenda-g i { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); }
+
+/* Lienzos: gráfica 1 (Inicio) y resultado del mes, más altos */
+.ng-seis .md-lienzo-g1, .md-lienzo-g1 { height: 290px !important; }
+.fila-graficas > .ng-card .md-lienzo-res, .md-lienzo-res { height: 230px !important; min-height: 0 !important; margin-top: 4px !important; flex: none !important; }
+.md-leyenda-g { display: flex; gap: 16px; font-size: 13px; color: #6A5A50; }
+.md-leyenda-g i { display: inline-block; width: 12px; height: 12px; margin-right: 6px; border-radius: 3px; vertical-align: -1px; }
+.md-pie-g1 { margin-top: 10px; }
+
+/* Punto de equilibrio: tabla B3 */
+.md-b3 { margin-top: 4px; }
+.md-b3-cab, .md-b3-l { display: grid; grid-template-columns: 1fr auto 96px; align-items: baseline; gap: 10px; }
+.md-b3-cab { margin-bottom: 8px; font-size: 12px; color: #8A7A70; }
+.md-b3-cab span:nth-child(2), .md-b3-cab span:nth-child(3) { text-align: right; }
+.md-b3-fila { margin-bottom: 16px; }
+.md-b3-l { margin-bottom: 7px; font-size: 14.5px; }
+.md-b3-l b { font-weight: 600; color: #2B211C; }
+.md-b3-l span { color: #3B2F2A; text-align: right; font-variant-numeric: tabular-nums; }
+.md-b3-l em { font-style: normal; font-weight: 700; color: #2B211C; text-align: right; font-variant-numeric: tabular-nums; }
+.md-b3-b { display: flex; height: 13px; border-radius: 7px; background: #F1EAE2; overflow: hidden; box-shadow: inset 0 1px 2px rgba(60, 35, 20, 0.12); }
+.md-b3-b i { display: block; height: 100%; }
+.md-b3-b i:first-child { border-radius: 7px 0 0 7px; }
+.md-b3-b i:last-child { border-radius: 0 7px 7px 0; }
+.md-b3-b i:only-child { border-radius: 7px; }
+.md-b3-res { display: flex; justify-content: space-between; align-items: baseline; padding-top: 12px; border-top: 1px solid #EDE3D8; font-size: 14.5px; color: #6A5A50; }
+.md-b3-res b { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Mis gráficos: títulos cortos debajo de cada círculo */
+#sec-graficos .cp-label { font-weight: 700; }
+
+/* Mis gráficos: tarjeta de la «Conclusión» (versión 1) */
+.mg-tarjeta { padding: 4px 2px 2px; }
+.mg-sub { margin: 0 0 4px; font-size: 13px; color: #6A5A50; }
+.mg-veredicto { margin: 0 0 14px; font-size: 28px; font-weight: 700; line-height: 1.15; }
+.mg-filas { margin: 0 0 18px; }
+.mg-filas > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 7px 0; border-bottom: 1px solid #F1E8DE; font-size: 14.5px; }
+.mg-filas > div:last-child { border-bottom: 0; }
+.mg-filas dt { color: #6A5A50; }
+.mg-filas dd { margin: 0; font-weight: 700; color: #2B211C; text-align: right; font-variant-numeric: tabular-nums; }
+.mg-barras { display: flex; flex-direction: column; gap: 12px; }
+.mg-barra span { display: block; margin-bottom: 5px; font-size: 13px; color: #6A5A50; }
+.mg-barra i { display: block; height: 18px; border-radius: 7px; }
+.mg-columnas { display: flex; align-items: flex-end; justify-content: space-around; gap: 10px; height: 170px; padding-top: 6px; }
+.mg-col { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; max-width: 90px; height: 100%; }
+.mg-col-b { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 5px; }
+.mg-col-b i { display: block; width: 42%; border-radius: 6px 6px 3px 3px; }
+.mg-col span { font-size: 12.5px; color: #6A5A50; }
+.mg-ranking { display: flex; flex-direction: column; gap: 10px; }
+.mg-rk { display: grid; grid-template-columns: 44px 1fr 70px; align-items: center; gap: 10px; font-size: 14px; color: #3B2F2A; }
+.mg-rk i { display: block; height: 22px; border-radius: 6px; }
+.mg-rk em { font-style: normal; text-align: right; color: #6A5A50; font-variant-numeric: tabular-nums; }
+.mg-rk-yo span, .mg-rk-yo em { font-weight: 700; color: #2B211C; }
+
+/* Ladrillos cerámicos más vendidos: filas más claras, con el precio de cada código */
+.pd-lista.md-pd-lista { display: flex; flex-direction: column; gap: 14px; margin: 14px 0 0; padding: 0; }
+.md-pd-fila { display: grid; grid-template-columns: 34px 1fr; gap: 14px; align-items: start; padding: 12px 14px; border-radius: 12px; background: #FFFCF8; border: 1px solid #F1E6DA; box-shadow: 0 2px 6px rgba(90, 50, 30, 0.06); }
+.md-pd-puesto { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; color: #fff; font-weight: 700; font-size: 14px;
+  background-color: var(--c); background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.35), rgba(0, 0, 0, 0.12)); box-shadow: 0 3px 7px rgba(60, 30, 15, 0.25); }
+.md-pd-cuerpo { min-width: 0; }
+.md-pd-l { display: grid; grid-template-columns: 1fr auto 52px; align-items: baseline; gap: 10px; margin-bottom: 7px; }
+.md-pd-l b { font-size: 16px; color: #2B211C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.md-pd-l span { font-size: 14.5px; font-weight: 600; color: #3B2F2A; font-variant-numeric: tabular-nums; }
+.md-pd-l em { font-style: normal; text-align: right; font-size: 14px; font-weight: 700; color: var(--c); font-variant-numeric: tabular-nums; }
+.md-pd-precio { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 9px 0 0; }
+.md-pd-chip { padding: 3px 10px; border-radius: 20px; background: #F3ECE4; color: #4A3C35; font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.md-pd-precio small { font-size: 12.5px; color: #8A7A70; font-variant-numeric: tabular-nums; }
+
+/* Ranking anual: si la tarjeta es angosta, la lista va debajo del círculo (así los nombres no se cortan) */
+@container (max-width: 430px) {
+  .md-m7 { flex-direction: column; align-items: stretch; gap: 14px; }
+  .md-m7-dona { align-self: center; }
+}
+
+/* Tarjeta «Resultado mes a mes»: cuadritos con su monto debajo y tres datos */
+.md-strip2 { display: flex; gap: 8px; margin: 4px 0 4px; }
+.md-mes { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+.md-mes button { width: 100%; height: 44px; margin-bottom: 8px; padding: 0; border: 0; border-radius: 9px; color: #fff; font: 700 14px/1 Poppins, Inter, sans-serif; cursor: pointer;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 55%, rgba(0, 0, 0, 0.14));
+  box-shadow: 0 3px 7px rgba(60, 30, 15, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35); text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25); }
+.md-mes.md-sel button { box-shadow: 0 3px 7px rgba(60, 30, 15, 0.25), inset 0 0 0 2px rgba(43, 33, 28, 0.65); }
+.md-mes button:hover { filter: brightness(1.08); }
+.md-mes b { font-size: 14.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.md-mes small { font-size: 11.5px; }
+.md-datos { margin-top: 16px; padding-top: 4px; border-top: 1px solid #EDE3D8; }
+.md-dato { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 0; font-size: 14.5px; color: #6A5A50; }
+.md-dato b { color: #2B211C; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.md-dato b.md-gr { font-size: 21px; }
+
+/* «Resultado mes a mes»: si la tarjeta es angosta, «mil» baja a una segunda línea en vez de encimarse con el mes vecino */
+.md-mes b { white-space: normal; line-height: 1.15; max-width: 100%; }
+.md-mes small { line-height: 1.2; }
+.md-strip2 { gap: 6px; }
+
+/* Al tocar un indicador del «Mapa de mi negocio»: contorno semibrillante del color de su miniatura (1.2 s) */
+.ng-resalte { animation: mdResalte 2.5s ease-out 1; }
+@keyframes mdResalte {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--resalte) 0%, transparent); }
+  18% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--resalte) 85%, #fff), 0 0 18px 4px color-mix(in srgb, var(--resalte) 45%, transparent); }
+  70% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--resalte) 75%, #fff), 0 0 16px 3px color-mix(in srgb, var(--resalte) 35%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--resalte) 0%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) { .ng-resalte { animation-duration: 1.2s; } }
+
+/* «Ventas de los últimos meses»: leyenda centrada debajo de la gráfica */
+.md-leyenda-abajo { justify-content: center; margin: 2px 0 12px; font-size: 13.5px; }
+.md-leyenda-abajo i { width: 13px; height: 13px; }
+
+/* Un poquito más de volumen en las barras de las tarjetas (sin movimiento) */
+.md-fila-b i, .md-b3-b i, .mg-barra i, .mg-rk i, .mg-col-b i {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.06) 50%, rgba(0, 0, 0, 0.16));
+  box-shadow: 0 3px 7px rgba(60, 30, 15, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+}
+.md-mes button { box-shadow: 0 4px 9px rgba(60, 30, 15, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.42), inset 0 -2px 0 rgba(0, 0, 0, 0.12); }
+.md-m7-dona canvas { filter: drop-shadow(0 5px 6px rgba(60, 30, 15, 0.22)); }
+
+/* Ladrillos cerámicos más vendidos: dos gráficas lado a lado */
+.pd-lista.md-pd-lista > li.pd-graficas { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.pd-g { padding: 14px 16px 10px; border-radius: 14px; background: #FFFCF8; border: 1px solid #F1E6DA; box-shadow: 0 3px 10px rgba(90, 50, 30, 0.07); }
+.pd-g-tit { margin: 0 0 8px; font-size: 14px; font-weight: 700; color: #2B211C; }
+.pd-g-lienzo { position: relative; }
+
+/* Σ de todos los meses (tarjeta «Resultado neto mes a mes»): símbolo de sumatoria en cristal 3D */
+.md-sigma-fila { display: inline-flex; align-items: center; gap: 10px; }
+.md-sigma {
+  flex: none; display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 28%;
+  background: radial-gradient(120% 90% at 25% 10%, #7EE0AE, transparent 55%), linear-gradient(145deg, #2FB872, #0E6B40);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.55), inset 0 -5px 9px rgba(0, 0, 0, 0.25),
+    0 6px 12px rgba(17, 119, 74, 0.35), 0 0 14px rgba(67, 203, 132, 0.35);
+  transform: perspective(120px) rotateY(-14deg) rotateX(6deg);
+  position: relative; overflow: hidden;
+}
+.md-sigma::before { content: ""; position: absolute; inset: 3% 8% 52% 8%; border-radius: 30% 30% 60% 60% / 40% 40% 50% 50%; background: linear-gradient(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0)); }
+.md-sigma svg { position: relative; width: 78%; height: 78%; filter: drop-shadow(0 0 3px rgba(255, 214, 90, 0.7)); }
+
+/* ==========================================================================
+   Títulos más bonitos y legibles: letra de título (Plus Jakarta Sans), más gruesa,
+   con un degradado terracota. Solo cambia la letra: tamaños y lugares siguen igual.
+   (Mapa de mi negocio, tarjetas de gráficas, Salud de tu negocio, Ladrillos y Mis gráficos;
+   «Registro del mes» se deja como estaba)
+   ========================================================================== */
+.esf-titulo,
+.card-titulo:not(#sec-ventas .card-titulo),
+.kc-pregunta,
+.control-panel-title {
+  font-family: "Plus Jakarta Sans", "Poppins", sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.012em;
+  color: #8A3A22;
+  background: linear-gradient(100deg, #6E2A17 0%, #A8492B 55%, #C8683E 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.esf-titulo { font-size: 23px; }
+.control-panel-title { font-size: 24px; }
+#sec-graficos .cp-label { font-family: "Plus Jakarta Sans", "Poppins", sans-serif; font-weight: 700; letter-spacing: -0.005em; color: #5A2A1A; }

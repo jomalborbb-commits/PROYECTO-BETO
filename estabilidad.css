@@ -1,0 +1,104 @@
+/* ==========================================================================
+   estabilidad.css — Ventana "Estabilidad" (desviación estándar) y los bloques
+   de indicadores, interpretación y recomendaciones (también los usa la ventana
+   "¿Qué tan parejos…?"). Reutiliza la forma de las ventanas vm- y pj-.
+   Nombres nuevos con "es-".
+   ========================================================================== */
+
+/* Marca de la ventana: rojo y amarillo */
+.es-overlay .vm-marca i { background: linear-gradient(135deg, #E53935 0 50%, #FFC107 50% 100%); }
+.es-tipo-ambos i { background: linear-gradient(90deg, #2FA84F 0 50%, #F07A1E 50% 100%) !important; }
+.es-nota-tipo { display: block; margin-top: 6px; font-size: 11.5px; color: #7A6A60; }
+
+.es-bloque-ingresos { border-left: 4px solid #2FA84F; }
+.es-bloque-egresos { border-left: 4px solid #F07A1E; }
+.es-bloque-resultado { border-left: 4px solid #E53935; }
+
+/* Subtítulos dentro del análisis */
+.es-sub {
+  margin: 16px 0 8px;
+  font: 600 13.5px var(--font-display, "Poppins", sans-serif);
+  color: #8C3A0A;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Indicadores de cada mes (el color llega en --c) */
+.es-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.es-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--c);
+  background: color-mix(in srgb, var(--c) 12%, #fff);
+  color: color-mix(in srgb, var(--c) 80%, #000);
+  font: 600 12px/1.5 var(--font-body, "Inter", sans-serif);
+  white-space: nowrap;
+}
+
+.es-chip b { color: #2B211C; font-weight: 700; }
+.es-chip-activo { box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 45%, #fff); }
+
+.es-leyenda { margin: 8px 0 0; font-size: 12.5px; line-height: 1.5; color: #6A5A50; }
+
+/* Interpretación, al estilo del ejemplo del curso */
+.es-interpretacion {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #FFF7E6;
+  border: 1px solid #FFE0A3;
+  color: #1F3A68;
+}
+
+/* Recomendaciones */
+.es-rec { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.es-rec li {
+  position: relative;
+  padding: 8px 12px 8px 34px;
+  border-radius: 10px;
+  background: #FFFBF5;
+  border: 1px solid #F3E4D2;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.es-rec li::before {
+  content: "✓";
+  position: absolute;
+  left: 11px;
+  top: 8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #E8590C;
+  color: #fff;
+  font: 700 10px/16px var(--font-body, "Inter", sans-serif);
+  text-align: center;
+}
+
+/* Pasos de la resolución (como en el ejemplo del curso) */
+.es-paso {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin: 8px 0;
+}
+.es-paso span { font-size: 14px; color: #2F2621; min-width: 240px; }
+.es-paso code {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #FFF8F1;
+  border: 1px solid #F1DCC7;
+  font: 500 14.5px/1.5 "Cambria Math", "Times New Roman", Georgia, serif;
+  color: #2B211C;
+  overflow-wrap: anywhere;
+}
+
+/* Tabla */
+.es-tabla .es-fila { cursor: pointer; }
+.es-tabla .es-fila-dia { cursor: default; }
+.es-tabla .es-fila:hover td { background: #FFF3E8; }
+.es-tabla .es-fila-resumen td { background: #FAF6F1; font-weight: 600; border-top: 1px solid #E8D5C2; }

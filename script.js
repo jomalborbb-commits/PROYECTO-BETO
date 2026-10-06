@@ -32,6 +32,10 @@ let registros = [];          // todos los registros del sistema
 let mesActual = new Date().getMonth(); // 0 = enero
 let idEnEdicion = null;
 let datosImportadosPendientes = null;  // buffer temporal para el flujo de importación
+// Qué se está viendo y registrando: "ingresos" (ventas, lo de siempre) o "egresos" (egresos.js)
+let modoRegistro = "ingresos";
+// De qué tipo son los datos que esperan en la ventana de importación
+let tipoImportacionPendiente = "ingresos";
 
 /* =========================================================
    CONTROL CENTRAL DE MODALES
@@ -49,6 +53,22 @@ function abrirModal(elementoOverlay) {
   cerrarTodasLasModales();
   elementoOverlay.hidden = false;
 }
+
+/* =========================================================
+   APERTURA SIN DATOS (pedido del usuario)
+   Cada vez que se entra a la página (abrirla, recargarla con F5 o la
+   recarga de Live Server) empieza vacía: ningún Excel queda cargado y los
+   datos los carga el usuario importando sus Excel.
+   Al entrar, tampoco se reactivan solos el Excel automático ni la carpeta
+   XML: así nada se carga ni se sobrescribe sin que el usuario lo pida.
+   ========================================================= */
+const aperturaNueva = (function () {
+  try {
+    ["registros_ladrillos_v1", "egresos_ladrillos_v1", "facturas_xml_procesadas_v1"].forEach(k => localStorage.removeItem(k));
+    sessionStorage.removeItem("sesion_abierta_v1");   // marca de la versión anterior (ya no se usa)
+  } catch (e) { /* sin almacenamiento: igual empieza vacía */ }
+  return true;
+})();
 
 /* =========================================================
    PERSISTENCIA (localStorage)
@@ -203,21 +223,51 @@ function actualizarBadgeSync(activo) {
   const badge = document.getElementById("syncBadge");
   const texto = badge.querySelector(".status-text");
   if (activo) {
-    texto.textContent = "Excel automático: Activo";
+    texto.textContent = "Excel de ingresos: Activo";
     badge.classList.add("activo");
   } else {
-    texto.textContent = "Excel automático: Inactivo";
+    texto.textContent = "Excel de ingresos: Inactivo";
     badge.classList.remove("activo");
   }
 }
 
+// Fecha "AAAA-MM-DD" → número de fecha de Excel exacto.
+// Antes se escribía como fecha de JavaScript y, por la zona horaria de Perú, Excel la
+// mostraba un día antes (el 01/04 salía 31/03) y al volver a importarla se corría de mes.
+function fechaExcel(fechaStr) {
+  const p = String(fechaStr || "").slice(0, 10).split("-").map(Number);
+  if (p.length !== 3 || !p[0] || !p[1] || !p[2]) return "";
+  return (Date.UTC(p[0], p[1] - 1, p[2]) - Date.UTC(1899, 11, 30)) / 86400000;
+}
+
+// Al abrir el Excel se ve el último mes con datos (no una hoja de enero vacía)
+function abrirEnUltimaHojaConDatos(wb) {
+  let idx = -1;
+  wb.SheetNames.forEach((n, i) => {
+    const ref = wb.Sheets[n] && wb.Sheets[n]["!ref"];
+    if (ref && XLSX.utils.decode_range(ref).e.r >= 1) idx = i;
+  });
+  if (idx < 0) return;
+  wb.Workbook = wb.Workbook || {};
+  wb.Workbook.Views = [{ activeTab: idx }];
+}
+
 // Construye el mismo libro que "Exportar todo el año" (una hoja por mes)
 // y lo escribe directamente sobre el archivo vinculado, sin descargar nada.
+// Nunca hay dos escrituras a la vez: si llega un cambio mientras se escribe, se repite al terminar.
+let escribiendoExcelIngresos = false;
+let pendienteExcelIngresos = false;
 async function actualizarExcelAutomatico() {
-  if (!handleExcelAutomatico) return;
+  if (!handleExcelAutomatico) return false;
+  if (escribiendoExcelIngresos) { pendienteExcelIngresos = true; return false; }
+  escribiendoExcelIngresos = true;
+  let ok = false;
   try {
     const permiso = await handleExcelAutomatico.queryPermission({ mode: "readwrite" });
-    if (permiso !== "granted") return; // se pedirá de nuevo con el botón de "reanudar"
+    if (permiso !== "granted") {
+      if (window.AvisoExcel) AvisoExcel.sinPermiso("ingresos", handleExcelAutomatico.name);
+      return false;
+    }
 
     const wb = XLSX.utils.book_new();
     MESES.forEach((nombreMes, idx) => {
@@ -225,16 +275,24 @@ async function actualizarExcelAutomatico() {
       const ws = construirHojaExcel(lista);
       XLSX.utils.book_append_sheet(wb, ws, nombreMes.slice(0, 31));
     });
+    abrirEnUltimaHojaConDatos(wb);
 
     const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array", cellStyles: true });
     const writable = await handleExcelAutomatico.createWritable();
     await writable.write(buffer);
     await writable.close();
-    mostrarToast("✅ Datos exportados correctamente a Excel", "success");
+    ok = true;
+    if (window.AvisoExcel) AvisoExcel.cerrar("ingresos");
+    mostrarToast(`✅ Excel de ingresos actualizado: «${handleExcelAutomatico.name}» (${registros.length} ingreso(s))`, "success");
   } catch (err) {
     console.error("Error actualizando el Excel automático:", err);
-    mostrarToast("No se pudo actualizar el Excel automático.", "error");
+    if (window.AvisoExcel) AvisoExcel.error("ingresos", handleExcelAutomatico && handleExcelAutomatico.name);
+    else mostrarToast("No se pudo actualizar el Excel automático. Si el archivo está abierto en Excel, ciérralo y vuelve a intentar.", "error");
+  } finally {
+    escribiendoExcelIngresos = false;
+    if (pendienteExcelIngresos) { pendienteExcelIngresos = false; actualizarExcelAutomatico(); }
   }
+  return ok;
 }
 
 async function activarExcelAutomatico() {
@@ -261,8 +319,11 @@ async function activarExcelAutomatico() {
     handleExcelAutomatico = handle;
     await guardarHandleEnDB(handle);
     actualizarBadgeSync(true);
+    if (window.AvisoExcel) AvisoExcel.cerrar("ingresos");
     mostrarToast("Excel automático activado. Se actualizará con cada cambio.", "success");
-    await actualizarExcelAutomatico();
+    const ok = await actualizarExcelAutomatico();
+    // Con la página vacía, el Excel queda listo con sus encabezados y se llena con cada ingreso
+    if (ok && registros.length === 0) mostrarToast(`Tu Excel «${handle.name}» quedó listo con los encabezados de ingresos. Se llenará con cada ingreso que registres o importes.`, "info");
   } catch (err) {
     if (err.name !== "AbortError") {
       console.error(err);
@@ -276,7 +337,7 @@ async function activarExcelAutomatico() {
 // Si el navegador ya no tiene el permiso, simplemente queda inactivo:
 // el usuario puede volver a vincularlo con "Activar Excel automático".
 async function intentarReanudarExcelAutomatico() {
-  if (!soportaExcelAutomatico()) return;
+  if (!soportaExcelAutomatico() || aperturaNueva) return;
   try {
     const handle = await obtenerHandleDeDB();
     if (!handle) return;
@@ -332,11 +393,11 @@ function actualizarBadgeCarpeta(activo) {
   const texto = badge.querySelector(".status-text");
   const btnEscanear = document.getElementById("btnEscanearAhora");
   if (activo) {
-    texto.textContent = "Carpeta de facturas XML: Activa";
+    texto.textContent = "Ingresos XML: Activa";
     badge.classList.add("activo");
     btnEscanear.hidden = false;
   } else {
-    texto.textContent = "Carpeta de facturas XML: Inactiva";
+    texto.textContent = "Ingresos XML: Inactiva";
     badge.classList.remove("activo");
     btnEscanear.hidden = true;
   }
@@ -398,7 +459,7 @@ async function activarCarpetaFacturas() {
     handleCarpetaFacturas = dirHandle;
     await guardarHandleEnDB(dirHandle, DB_KEY_CARPETA);
     actualizarBadgeCarpeta(true);
-    mostrarToast("Carpeta vinculada. Buscando facturas XML...", "success");
+    mostrarToast("Carpeta vinculada. Buscando facturas y boletas XML...", "success");
     await escanearCarpetaFacturas();
     iniciarVigilanciaCarpeta();
   } catch (err) {
@@ -477,7 +538,7 @@ function iniciarVigilanciaCarpeta() {
 // Al cargar la página, si ya existía una carpeta vinculada de una sesión
 // anterior y el permiso sigue vigente, la reactiva en silencio.
 async function intentarReanudarCarpetaFacturas() {
-  if (!soportaCarpetaFacturas()) return;
+  if (!soportaCarpetaFacturas() || aperturaNueva) return;
   try {
     const handle = await obtenerHandleDeDB(DB_KEY_CARPETA);
     if (!handle) return;
@@ -496,17 +557,22 @@ async function intentarReanudarCarpetaFacturas() {
 document.getElementById("btnActivarCarpetaFacturas").addEventListener("click", activarCarpetaFacturas);
 document.getElementById("btnEscanearAhora").addEventListener("click", function () {
   escanearCarpetaFacturas();
-  mostrarToast("Buscando facturas nuevas...", "success");
+  mostrarToast("Buscando facturas y boletas nuevas...", "success");
 });
 
 
 function renderTabs() {
   const nav = document.getElementById("monthTabs");
   nav.innerHTML = "";
+  // Cuántos registros tiene cada mes (de ingresos o de egresos, según lo que se esté viendo)
+  const enEgresos = modoRegistro === "egresos" && typeof egresosDelMes === "function";
   MESES.forEach((nombre, idx) => {
     const btn = document.createElement("button");
     btn.className = "month-tab" + (idx === mesActual ? " active" : "");
-    btn.textContent = nombre;
+    const cantidad = enEgresos ? egresosDelMes(idx).length : registrosDelMes(idx).length;
+    btn.innerHTML = `<span class="mt-nombre">${nombre}</span>` +
+      (cantidad > 0 ? `<span class="mt-cantidad" title="${cantidad} registro(s)">${cantidad}</span>` : "");
+    btn.setAttribute("aria-label", `${nombre}${cantidad > 0 ? `, ${cantidad} registro(s)` : ", sin registros"}`);
     btn.addEventListener("click", () => {
       mesActual = idx;
       renderTodo();
@@ -615,24 +681,83 @@ function renderTablaBody() {
 function renderTodo() {
   renderTabs();
   renderStats();
-  renderTablaHead();
-  renderTablaBody();
+  // Un solo "Registro del mes": muestra ingresos o egresos según el botón elegido en el menú
+  if (modoRegistro === "egresos" && typeof renderRegistroEgresos === "function") {
+    renderRegistroEgresos();
+  } else {
+    renderTablaHead();
+    renderTablaBody();
+  }
+  if (typeof actualizarVistaModo === "function") actualizarVistaModo();
   actualizarPanelControl();
-  actualizarIndicadoresClave();
+  // Tarjetas de gráficos del nuevo diseño (dashboard.js). Si ese archivo no cargó, no pasa nada.
+  if (typeof actualizarDashboard === "function") actualizarDashboard();
 }
 
 /* =========================================================
-   PANEL DE CONTROL — 6 TARJETAS FLIP 3D (FASE 1 del rediseño
-   industrial/futurista). Con TODOS los registros guardados.
+   PANEL DE CONTROL — 6 medallones con un gráfico distinto cada
+   uno (estilo galería de tipos de gráfico). En reposo todo va en
+   naranja rojo; al pasar el cursor el gráfico se colorea y se
+   dibuja de nuevo. Con TODOS los registros guardados.
    ========================================================= */
 
-const PALETA_GRAFICOS = ["#4DD8E0", "#E8A33D", "#8C2F1E", "#7A8B6F", "#B23E28", "#3F5566"];
+// Terracota de reposo y sus tintas: las porciones de un mismo gráfico se
+// distinguen por intensidad, sin salir del color del tema
+const COLOR_REPOSO = "#A9573F";
+const TINTAS_REPOSO = ["#8C4633", "#A9573F", "#C9775B", "#DFA58F", "#F0CDBE"];
+// Dibujo de reposo cuando todavía no hay ventas: suave, para que se note que es de relleno
+const TINTAS_SIN_DATOS = ["#EADBCB", "#F5EBDF"];
+// Colores vivos que aparecen al pasar el cursor: el trío terracota, arena y verde
+// hoja de la imagen de referencia, bien marcados entre sí para distinguir cada sector
+const VIVO_AZUL = "#A9573F";
+const VIVO_CIAN = "#4E7A4F";
+const VIVO_MORADO = "#D9A441";
+// Terracota apagada (opaca) para rellenos, como el área bajo la línea de ventas
+const AZUL_OPACO = "rgba(199,169,130,0.6)";
+// Para gráficos con más de 3 sectores: primero el trío y luego versiones más claras,
+// así ningún sector vecino repite el color
+const COLORES_VIVOS = [VIVO_AZUL, VIVO_MORADO, VIVO_CIAN, "#C9775B", "#E8C476", "#7FA680"];
 
 let miniChartVentasMes = null;
 let miniChartFormaPago = null;
-let miniChartBancos = null;
+// "Medidas de posición" (antes "Cliente con más deuda": se conserva el nombre de su lienzo)
+let miniChartTopDeudor = null;
 
-// Notación compacta para que un monto quepa en una tarjeta de 3x4cm
+function reducirMovimiento() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+// Se repite el ciclo de colores si hay más porciones que colores
+function repetirColores(paleta, cantidad) {
+  return Array.from({ length: cantidad }, (_, i) => paleta[i % paleta.length]);
+}
+
+// Cada gráfico lleva sus dos "trajes" de color: reposo (naranja rojo) y color (vivo).
+// Sin datos, los dos trajes son el mismo para que el dibujo de relleno no se coloree.
+function estilosDeSectores(cantidad, hayDatos, extra = {}, coloresVivos = COLORES_VIVOS) {
+  if (!hayDatos) {
+    const suave = { backgroundColor: repetirColores(TINTAS_SIN_DATOS, cantidad), ...extra };
+    return { reposo: suave, color: suave };
+  }
+  return {
+    reposo: { backgroundColor: repetirColores(TINTAS_REPOSO, cantidad), ...extra },
+    color: { backgroundColor: repetirColores(coloresVivos, cantidad), ...extra },
+  };
+}
+
+// Opciones comunes: sin ejes ni leyendas dentro del círculo, y sin eventos propios
+// del gráfico (el cursor lo maneja la tarjeta entera, no cada barra)
+function opcionesBaseMedallon() {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    events: [],
+    animation: { duration: 900, easing: "easeOutQuart" },
+    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+  };
+}
+
+// Notación compacta para que un monto quepa bajo el círculo
 // (ej. "S/12.4K" en vez de "S/ 12,400.00").
 function formatearMonedaCompacta(numero) {
   const v = Number(numero) || 0;
@@ -643,17 +768,42 @@ function formatearMonedaCompacta(numero) {
   return `${signo}S/${abs.toFixed(0)}`;
 }
 
-// Gráfico miniatura sin ejes ni leyenda (no entran en 90x46px);
-// el detalle numérico se muestra al voltear la tarjeta, no en el gráfico.
-function dibujarMiniChart(referenciaPrevia, canvasId, config) {
+// Crea el gráfico la primera vez y, después, solo le cambia los datos.
+// Al actualizar se vuelve a aplicar el traje de color vigente: si el cursor
+// está encima justo cuando cambian los datos, no debe "apagarse" el color.
+function dibujarMiniChart(referenciaPrevia, canvasId, config, estilos) {
+  const modo = referenciaPrevia ? referenciaPrevia.$modo : "reposo";
+  Object.assign(config.data.datasets[0], estilos[modo]);
+
   if (referenciaPrevia) {
     referenciaPrevia.data = config.data;
+    referenciaPrevia.$estilos = estilos;
     referenciaPrevia.update();
     return referenciaPrevia;
   }
   const canvas = document.getElementById(canvasId);
   if (!canvas || typeof Chart === "undefined") return null;
-  return new Chart(canvas, config);
+  const grafico = new Chart(canvas, config);
+  grafico.$estilos = estilos;
+  grafico.$modo = "reposo";
+  return grafico;
+}
+
+// Cambia entre el traje de reposo y el de color. Al pasar a "color" se reinicia
+// el dibujo para que el gráfico se trace de nuevo con animación (las barras suben,
+// la línea se traza, la dona se llena) hasta su estado final.
+function cambiarModoGrafico(canvas, modo) {
+  if (!canvas || typeof Chart === "undefined") return;
+  const grafico = Chart.getChart(canvas);
+  if (!grafico || !grafico.$estilos) return;
+
+  grafico.$modo = modo;
+  // Los gráficos de varias series (como la simulación de la DMA) traen su propia forma de pintarse
+  if (typeof grafico.$aplicarModo === "function") grafico.$aplicarModo(modo);
+  else Object.assign(grafico.data.datasets[0], grafico.$estilos[modo]);
+  const sinMovimiento = reducirMovimiento();
+  if (modo === "color" && !sinMovimiento) grafico.reset();
+  grafico.update(sinMovimiento ? "none" : undefined);
 }
 
 function actualizarPanelControl() {
@@ -661,363 +811,416 @@ function actualizarPanelControl() {
 
   actualizarCardVentasMes();
   actualizarCardFormaPago();
-  actualizarCardTopDeudor();
-  actualizarCardTopRepresentante();
-  actualizarCardTopCodigo();
-  actualizarCardBancos();
+  actualizarCardPosicion();
 }
 
-/* --- 1. VENTAS/MES: sparkline anual + ranking de los 3 mejores meses --- */
+/* --- 1. ¿QUÉ TAN PAREJOS SON TUS INGRESOS Y EGRESOS? Simulación de la desviación
+   media absoluta: cada punto es un monto (relativo a su promedio); la franja es
+   "lo normal" (promedio ± DMA) y la rayita de cada punto es su distancia al
+   promedio. En reposo va en terracota; al pasar el cursor, ingresos en verde
+   y egresos en naranja. Al hacer clic se abre su ventana (parejos.js). --- */
+
+// DMA como porcentaje del promedio: cuánto se aleja, en promedio, cada monto
+function dmaPorcentaje(montos) {
+  if (montos.length < 2) return null;
+  const media = montos.reduce((s, v) => s + v, 0) / montos.length;
+  if (!media) return null;
+  const dma = montos.reduce((s, v) => s + Math.abs(v - media), 0) / montos.length;
+  return (dma / media) * 100;
+}
+
+// Toma hasta "cuantos" montos repartidos en el tiempo, para que el dibujo no se amontone
+function muestraRepartida(lista, cuantos) {
+  if (lista.length <= cuantos) return lista.slice();
+  const paso = (lista.length - 1) / (cuantos - 1);
+  return Array.from({ length: cuantos }, (_, i) => lista[Math.round(i * paso)]);
+}
+
+// Rayita desde cada punto hasta el promedio: la "distancia" que mide la DMA
+const pluginDistanciasMedallon = {
+  id: "cpDistancias",
+  beforeDatasetsDraw(chart) {
+    const y = chart.scales.y;
+    if (!y) return;
+    const ctx = chart.ctx;
+    const y0 = y.getPixelForValue(1);
+    ctx.save();
+    [3, 4].forEach(i => {
+      const ds = chart.data.datasets[i];
+      const meta = chart.getDatasetMeta(i);
+      if (!ds || !meta) return;
+      ctx.strokeStyle = ds.$colorRaya || "rgba(169,87,63,0.35)";
+      ctx.lineWidth = 2.6;
+      meta.data.forEach(p => {
+        ctx.beginPath();
+        ctx.moveTo(p.x, y0);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+      });
+    });
+    ctx.restore();
+  },
+};
+
 function actualizarCardVentasMes() {
-  const totalesPorMes = MESES.map((_, idx) => registrosDelMes(idx).reduce((s, r) => s + (Number(r.montoTotal) || 0), 0));
-  const totalAnual = totalesPorMes.reduce((s, v) => s + v, 0);
+  const listaEgresos = typeof egresos !== "undefined" ? egresos : [];
+  const porFecha = (a, b) => (a.f || "").localeCompare(b.f || "");
+  const ing = registros.map(r => ({ f: r.fechaIngreso, v: Number(r.montoTotal) || 0 })).filter(x => x.v > 0).sort(porFecha);
+  const egr = listaEgresos.map(e => ({ f: e.fechaEgreso, v: Number(e.monto) || 0 })).filter(x => x.v > 0).sort(porFecha);
 
-  document.getElementById("cpVentasMesValor").textContent = formatearMonedaCompacta(totalAnual);
+  const pIng = dmaPorcentaje(ing.map(x => x.v));
+  const pEgr = dmaPorcentaje(egr.map(x => x.v));
+  const hayDatos = pIng !== null || pEgr !== null;
 
-  miniChartVentasMes = dibujarMiniChart(miniChartVentasMes, "miniChartVentasMes", {
-    type: "line",
-    data: {
-      labels: MESES.map(m => m.slice(0, 3)),
-      datasets: [{ data: totalesPorMes, borderColor: "#4DD8E0", backgroundColor: "rgba(77,216,224,0.15)", borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: true }],
+  const valor = document.getElementById("cpVentasMesValor");
+  // Lectura en palabras comunes (sin porcentajes): ¿los montos se parecen entre sí?
+  const planoDma = p => p === null ? null : p < 15 ? "parejos" : p < 30 ? "algo distintos" : p <= 50 ? "muy distintos" : "muy desiguales";
+  const lecDma = [["Ventas", planoDma(pIng)], ["Pagos", planoDma(pEgr)]].filter(x => x[1]);
+  valor.textContent = !hayDatos ? "—"
+    : lecDma.length === 2 && lecDma[0][1] === lecDma[1][1] ? `Ventas y pagos: ${lecDma[0][1]}`
+    : lecDma.map(x => `${x[0]}: ${x[1]}`).join(" · ");
+  valor.title = "¿Tus montos se parecen entre sí? Si son muy desiguales, el promedio no representa a un monto típico. Toca para ver el detalle.";
+
+  // Cada monto se dibuja relativo a su propio promedio (1 = justo el promedio),
+  // así ingresos y egresos caben en el mismo círculo. Sin datos: una simulación de ejemplo.
+  const relativos = (lista, pct) => {
+    if (lista.length < 2) return [];
+    const media = lista.reduce((s, x) => s + x.v, 0) / lista.length;
+    return muestraRepartida(lista, 6).map(x => Math.min(2.05, x.v / media));
+  };
+  let yIng = relativos(ing, pIng);
+  let yEgr = relativos(egr, pEgr);
+  if (!hayDatos) {
+    yIng = [1.35, 0.7, 1.15, 0.55, 1.6, 0.9];
+    yEgr = [0.8, 1.45, 0.6, 1.2, 1.05, 1.5];
+  }
+  const pcts = [pIng, pEgr].filter(p => p !== null);
+  // En el círculo la franja se limita a ±0.6 para que se lea a este tamaño (el valor exacto está en la ventana)
+  const banda = hayDatos ? Math.min(0.6, (pcts.reduce((s, p) => s + p, 0) / pcts.length) / 100) : 0.4;
+
+  // Ingresos en las posiciones pares y egresos en las impares, intercalados
+  const puntosIng = yIng.map((y, i) => ({ x: i * 2 + 0.6, y }));
+  const puntosEgr = yEgr.map((y, i) => ({ x: i * 2 + 1.6, y }));
+  const bordes = [{ x: 0, y: 0 }, { x: 12.2, y: 0 }];
+
+  const datos = {
+    datasets: [
+      { data: bordes.map(p => ({ x: p.x, y: 1 + banda })), showLine: true, pointRadius: 0, borderWidth: 0, fill: "+1" },
+      { data: bordes.map(p => ({ x: p.x, y: Math.max(0, 1 - banda) })), showLine: true, pointRadius: 0, borderWidth: 0, fill: false },
+      { data: bordes.map(p => ({ x: p.x, y: 1 })), showLine: true, pointRadius: 0, borderWidth: 2, borderDash: [4, 3], fill: false },
+      { data: puntosIng, showLine: false, pointRadius: 5.5, pointBorderWidth: 2, pointBorderColor: "#fff" },
+      { data: puntosEgr, showLine: false, pointRadius: 5.5, pointBorderWidth: 2, pointBorderColor: "#fff" },
+    ],
+  };
+
+  // Colores de cada estado: reposo (terracota) y color (verde y naranja)
+  function aplicarModo(modo) {
+    const g = miniChartVentasMes;
+    if (!g) return;
+    const ds = g.data.datasets;
+    const vivo = modo === "color";
+    ds[0].backgroundColor = vivo ? "rgba(217,164,65,0.22)" : "rgba(169,87,63,0.10)";
+    ds[2].borderColor = vivo ? "#7A4A38" : "rgba(169,87,63,0.55)";
+    ds[3].pointBackgroundColor = vivo ? "#2FA84F" : COLOR_REPOSO;
+    ds[4].pointBackgroundColor = vivo ? "#F07A1E" : "#DFA58F";
+    ds[3].$colorRaya = vivo ? "rgba(47,168,79,0.75)" : "rgba(169,87,63,0.30)";
+    ds[4].$colorRaya = vivo ? "rgba(240,122,30,0.75)" : "rgba(169,87,63,0.30)";
+  }
+
+  const opciones = {
+    ...opcionesBaseMedallon(),
+    layout: { padding: 4 },
+    scales: {
+      x: { type: "linear", display: false, min: 0, max: 12.2 },
+      y: { display: false, min: -0.05, max: 2.15 },
     },
-    options: {
-      responsive: false,
-      plugins: { legend: { display: false }, tooltip: { enabled: false } },
-      scales: { x: { display: false }, y: { display: false, beginAtZero: true } },
-      elements: { line: { borderJoinStyle: "round" } },
-    },
-  });
+    elements: { line: { tension: 0 } },
+  };
 
-  const top3 = totalesPorMes
-    .map((monto, idx) => ({ mes: MESES[idx], monto }))
-    .sort((a, b) => b.monto - a.monto)
-    .slice(0, 3)
-    .filter(m => m.monto > 0);
+  if (miniChartVentasMes && miniChartVentasMes.config.type === "scatter") {
+    miniChartVentasMes.data = datos;
+    aplicarModo(miniChartVentasMes.$modo || "reposo");
+    miniChartVentasMes.update();
+  } else {
+    if (miniChartVentasMes) miniChartVentasMes.destroy();
+    const canvas = document.getElementById("miniChartVentasMes");
+    if (!canvas || typeof Chart === "undefined") return;
+    miniChartVentasMes = new Chart(canvas, { type: "scatter", data: datos, options: opciones, plugins: [pluginDistanciasMedallon] });
+    miniChartVentasMes.$estilos = {};
+    miniChartVentasMes.$modo = "reposo";
+    miniChartVentasMes.$aplicarModo = aplicarModo;
+    aplicarModo("reposo");
+    miniChartVentasMes.update("none");
+  }
 
-  const back = document.getElementById("cpVentasMesBack");
-  back.innerHTML = `<h4>Top 3 meses</h4>` + (
-    top3.length === 0
-      ? `<p>Aún no hay ventas registradas.</p>`
-      : top3.map((m, i) => `<p><strong>${i + 1}º ${m.mes}</strong><br>${formatearMoneda(m.monto)}</p>`).join("")
-  );
+  // Parte de atrás (solo se ve si la ventana no pudiera abrirse)
+  const nivel = p => p === null ? "sin datos" : p < 15 ? "parejos" : p < 30 ? "variación moderada" : p <= 50 ? "muy variables" : "muy disparejos";
+  document.getElementById("cpVentasMesBack").innerHTML = `<h4>¿Son parecidos?</h4>` +
+    `<p><strong>Ingresos</strong><br>${pIng !== null ? Math.round(pIng) + "% · " + nivel(pIng) : "sin datos"}</p>` +
+    `<p><strong>Egresos</strong><br>${pEgr !== null ? Math.round(pEgr) + "% · " + nivel(pEgr) : "sin datos"}</p>`;
 }
 
-/* --- 2. ADEL./CONT.: dona mini + montos exactos al voltear --- */
+/* --- 2. ADELANTO VS CONTADO: dona + montos exactos al voltear --- */
+/* --- 2. ESTABILIDAD (desviación estándar): campana de Gauss con los meses encima.
+   Antes aquí iba "Adelanto vs contado". La campana es "lo normal"; la zona central
+   es el promedio ± 1 desviación estándar; cada punto es un mes (rojo = ingresos,
+   blanco con borde rojo = egresos). Al pasar el cursor: rojo y amarillo.
+   Al hacer clic se abre su ventana (estabilidad.js). --- */
+
+// Totales de cada mes (año-mes) de una lista de {f: fecha, v: monto}. Igual que la
+// ventana "Estabilidad", el último mes no se cuenta si parece incompleto
+// (su último registro es antes del día 25).
+function totalesPorMes(lista) {
+  const mapa = {};
+  let ultimaFecha = "";
+  lista.forEach(x => {
+    if (!x.f || !(x.v > 0)) return;
+    const clave = String(x.f).slice(0, 7);
+    mapa[clave] = (mapa[clave] || 0) + x.v;
+    if (x.f > ultimaFecha) ultimaFecha = String(x.f);
+  });
+  if (ultimaFecha && Number(ultimaFecha.slice(8, 10)) < 25) delete mapa[ultimaFecha.slice(0, 7)];
+  return Object.keys(mapa).sort().slice(-12).map(k => mapa[k]);
+}
+
+// Desviación estándar muestral (divide entre n − 1, como en el ejemplo del curso)
+function desviacionMuestral(valores) {
+  if (valores.length < 2) return null;
+  const media = valores.reduce((s, v) => s + v, 0) / valores.length;
+  const suma = valores.reduce((s, v) => s + (v - media) * (v - media), 0);
+  return { media, s: Math.sqrt(suma / (valores.length - 1)) };
+}
+
+function curvaNormal(z) { return Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI); }
+
+// Líneas punteadas en ±1 desviación y línea del promedio
+const pluginLineasCampana = {
+  id: "cpLineasCampana",
+  afterDatasetsDraw(chart) {
+    const x = chart.scales.x, y = chart.scales.y;
+    if (!x || !y) return;
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.strokeStyle = chart.$colorLineas || "rgba(169,87,63,0.5)";
+    ctx.lineWidth = 2;
+    [-1, 0, 1].forEach(z => {
+      ctx.setLineDash(z === 0 ? [] : [4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x.getPixelForValue(z), y.getPixelForValue(0));
+      ctx.lineTo(x.getPixelForValue(z), y.getPixelForValue(curvaNormal(z)));
+      ctx.stroke();
+    });
+    ctx.restore();
+  },
+};
+
 function actualizarCardFormaPago() {
-  let montoAdelanto = 0, montoContado = 0;
-  registros.forEach(r => {
-    const monto = Number(r.montoTotal) || 0;
-    if (r.adelantoContado === "Adelanto") montoAdelanto += monto; else montoContado += monto;
-  });
-  const total = montoAdelanto + montoContado;
-  const pctContado = total > 0 ? Math.round((montoContado / total) * 100) : 0;
+  const listaEgresos = typeof egresos !== "undefined" ? egresos : [];
+  const mesesIng = totalesPorMes(registros.map(r => ({ f: r.fechaIngreso, v: Number(r.montoTotal) || 0 })));
+  const mesesEgr = totalesPorMes(listaEgresos.map(e => ({ f: e.fechaEgreso, v: Number(e.monto) || 0 })));
+  const dIng = desviacionMuestral(mesesIng);
+  const dEgr = desviacionMuestral(mesesEgr);
+  const hayDatos = !!(dIng || dEgr);
 
-  document.getElementById("cpFormaPagoValor").textContent = total > 0 ? `${pctContado}% CONT.` : "—";
+  // Coeficiente de variación: la desviación como % del promedio mensual (menos es más estable)
+  const planoCv = d => !d || !d.media ? null : (d.s / d.media) * 100 < 10 ? "muy estables" : (d.s / d.media) * 100 < 25 ? "estables" : (d.s / d.media) * 100 <= 50 ? "variables" : "muy inestables";
+  const lecCv = [["Ventas", planoCv(dIng)], ["Gastos", planoCv(dEgr)]].filter(x => x[1]);
+  const valor = document.getElementById("cpFormaPagoValor");
+  valor.textContent = !hayDatos ? "—"
+    : lecCv.length === 2 && lecCv[0][1] === lecCv[1][1] ? `Ventas y gastos: ${lecCv[0][1]}`
+    : lecCv.map(x => `${x[0]}: ${x[1]}`).join(" · ");
+  valor.title = "¿Tus ventas y tus gastos cambian mucho de un mes a otro? Toca para ver el detalle.";
 
-  const datos = total > 0 ? [montoAdelanto, montoContado] : [1, 1];
-  const colores = total > 0 ? ["#E8A33D", "#4DD8E0"] : ["#3A4A4C", "#2A2620"];
+  // Cada mes se ubica en la campana según a cuántas desviaciones está de su promedio (z)
+  const aZ = (vals, d) => d && d.s ? vals.map(v => Math.max(-2.8, Math.min(2.8, (v - d.media) / d.s))) : [];
+  let zIng = aZ(mesesIng, dIng);
+  let zEgr = aZ(mesesEgr, dEgr);
+  if (!hayDatos) { zIng = [-1.4, -0.3, 0.6, 1.3]; zEgr = [-0.8, 0.2, 1.8]; }
 
-  miniChartFormaPago = dibujarMiniChart(miniChartFormaPago, "miniChartFormaPago", {
-    type: "doughnut",
-    data: { datasets: [{ data: datos, backgroundColor: colores, borderWidth: 0 }] },
-    options: { responsive: false, cutout: "62%", plugins: { legend: { display: false }, tooltip: { enabled: false } } },
-  });
+  const curva = [];
+  for (let z = -3; z <= 3.001; z += 0.15) curva.push({ x: +z.toFixed(2), y: curvaNormal(z) });
+  const centro = curva.filter(p => p.x >= -1.001 && p.x <= 1.001);
 
-  const back = document.getElementById("cpFormaPagoBack");
-  back.innerHTML = total === 0
-    ? `<h4>Forma de pago</h4><p>Aún no hay ventas registradas.</p>`
-    : `<h4>Forma de pago</h4><p><strong>Adelanto</strong><br>${formatearMoneda(montoAdelanto)}</p><p><strong>Al contado</strong><br>${formatearMoneda(montoContado)}</p>`;
+  const datos = {
+    datasets: [
+      { data: curva, showLine: true, pointRadius: 0, borderWidth: 2.5, fill: "origin", tension: 0.3 },
+      { data: centro, showLine: true, pointRadius: 0, borderWidth: 0, fill: "origin", tension: 0.3 },
+      { data: zIng.map(z => ({ x: z, y: curvaNormal(z) })), showLine: false, pointRadius: 5.5, pointBorderWidth: 2 },
+      { data: zEgr.map(z => ({ x: z, y: curvaNormal(z) })), showLine: false, pointRadius: 5, pointBorderWidth: 2.5 },
+    ],
+  };
+
+  function aplicarModo(modo) {
+    const g = miniChartFormaPago;
+    if (!g) return;
+    const ds = g.data.datasets;
+    const vivo = modo === "color";
+    ds[0].borderColor = vivo ? "#E53935" : COLOR_REPOSO;
+    ds[0].backgroundColor = vivo ? "rgba(255,213,79,0.45)" : "rgba(169,87,63,0.10)";
+    ds[1].backgroundColor = vivo ? "rgba(255,193,7,0.85)" : "rgba(169,87,63,0.22)";
+    ds[2].pointBackgroundColor = vivo ? "#E53935" : COLOR_REPOSO;
+    ds[2].pointBorderColor = "#fff";
+    ds[3].pointBackgroundColor = "#fff";
+    ds[3].pointBorderColor = vivo ? "#E53935" : COLOR_REPOSO;
+    g.$colorLineas = vivo ? "rgba(229,57,53,0.85)" : "rgba(169,87,63,0.45)";
+  }
+
+  const opciones = {
+    ...opcionesBaseMedallon(),
+    layout: { padding: 4 },
+    scales: {
+      x: { type: "linear", display: false, min: -3, max: 3 },
+      y: { display: false, min: 0, max: 0.46 },
+    },
+  };
+
+  if (miniChartFormaPago && miniChartFormaPago.config.type === "scatter") {
+    miniChartFormaPago.data = datos;
+    aplicarModo(miniChartFormaPago.$modo || "reposo");
+    miniChartFormaPago.update();
+  } else {
+    if (miniChartFormaPago) miniChartFormaPago.destroy();
+    const canvas = document.getElementById("miniChartFormaPago");
+    if (!canvas || typeof Chart === "undefined") return;
+    miniChartFormaPago = new Chart(canvas, { type: "scatter", data: datos, options: opciones, plugins: [pluginLineasCampana] });
+    miniChartFormaPago.$estilos = {};
+    miniChartFormaPago.$modo = "reposo";
+    miniChartFormaPago.$aplicarModo = aplicarModo;
+    aplicarModo("reposo");
+    miniChartFormaPago.update("none");
+  }
+
+  // Parte de atrás (solo se ve si la ventana no pudiera abrirse)
+  const linea = (n, d) => `<p><strong>${n}</strong><br>${d ? formatearMonedaCompacta(d.media) + " ± " + formatearMonedaCompacta(d.s) + " al mes" : "sin datos"}</p>`;
+  document.getElementById("cpFormaPagoBack").innerHTML = `<h4>Estabilidad</h4>` + linea("Ingresos", dIng) + linea("Egresos", dEgr);
 }
 
-/* --- 3. TOP DEUDOR: nombre + ranking de los 3 mayores deudores --- */
-function actualizarCardTopDeudor() {
-  const deudaPorCliente = {};
-  registros.forEach(r => {
-    const nombre = (r.cliente || "Sin nombre").trim();
-    const deuda = Number(r.deudaPendiente) || 0;
-    if (deuda <= 0) return;
-    deudaPorCliente[nombre] = (deudaPorCliente[nombre] || 0) + deuda;
-  });
-  const top = Object.entries(deudaPorCliente).sort((a, b) => b[1] - a[1]).slice(0, 3);
+/* --- 3. MEDIDAS DE POSICIÓN: diagrama de caja de los ingresos (arriba) y de los
+   egresos (abajo), la misma figura de su ventana. Cada fila va en su propia
+   escala (1 = su máximo normal) para que las dos quepan en el círculo: la caja
+   es el 50% central (de Q1 a Q3), la raya oscura es la mediana y la línea fina
+   llega del mínimo al máximo normales. En reposo va en terracota; al pasar el
+   cursor, ingresos en verde y egresos en azul. Al hacer clic se abre su
+   ventana (posicion.js). Los números salen de analitica.js. --- */
+function actualizarCardPosicion() {
+  const an = window.Analitica;
+  const anio = an ? an.anioAnalisis() : null;
+  const resumen = tipo => (an ? an.resumenPosicion(an.movimientos(tipo, anio).map(m => m.valor), "curso") : null);
+  const rIng = resumen("ingresos");
+  const rEgr = resumen("egresos");
+  const hayDatos = !!(rIng || rEgr);
 
-  document.getElementById("cpTopDeudorValor").textContent = top.length === 0 ? "S/0 — OK" : `${top[0][0]}`;
+  const valor = document.getElementById("cpTopDeudorValor");
+  // Lectura en palabras comunes: cuánto vende un mes bueno (o, con pocos meses, una venta típica)
+  let lecturaPos = "—";
+  if (hayDatos) {
+    const meses = an.totalesMensuales("ingresos", anio, true).filter(u => u.total !== null && !u.excluido).map(u => u.total);
+    const rm = meses.length >= 3 ? an.resumenPosicion(meses, "curso") : null;
+    lecturaPos = rm ? `Un mes bueno vende más de ${formatearMonedaCompacta(rm.q3.valor)}`
+      : rIng ? `Una venta típica es de ${formatearMonedaCompacta(rIng.q2.valor)}`
+      : `Un pago típico es de ${formatearMonedaCompacta(rEgr.q2.valor)}`;
+  }
+  valor.textContent = lecturaPos;
+  valor.title = "Ordena tus montos de menor a mayor y muestra qué es «normal», «bueno» o «flojo». Toca para ver el detalle.";
 
-  const back = document.getElementById("cpTopDeudorBack");
-  back.innerHTML = `<h4>Top 3 deudores</h4>` + (
-    top.length === 0
-      ? `<p>🎉 Nadie tiene deuda pendiente.</p>`
-      : top.map(([nombre, monto], i) => `<p><strong>${i + 1}º ${nombre}</strong><br>${formatearMoneda(monto)}</p>`).join("")
-  );
+  // Sin datos: una caja de ejemplo para que se vea la forma del gráfico
+  const fila = (r, ejemplo) => {
+    if (!r) return hayDatos ? null : ejemplo;
+    const tope = r.bigoteSup || r.max || 1;
+    return { bigote: [r.bigoteInf / tope, 1], caja: [r.q1.valor / tope, r.q3.valor / tope], mediana: r.q2.valor / tope };
+  };
+  const filas = [
+    fila(rIng, { bigote: [0.08, 1], caja: [0.3, 0.64], mediana: 0.45 }),
+    fila(rEgr, { bigote: [0.04, 0.92], caja: [0.18, 0.52], mediana: 0.3 }),
+  ];
+  const grosor = 0.014;
+  const datos = {
+    labels: ["Ingresos", "Egresos"],
+    datasets: [
+      { data: filas.map(f => (f ? f.bigote : null)), barPercentage: 0.14, categoryPercentage: 1, grouped: false, borderSkipped: false },
+      { data: filas.map(f => (f ? f.caja : null)), barPercentage: 0.7, categoryPercentage: 1, grouped: false, borderWidth: 2.5, borderRadius: 5, borderSkipped: false },
+      { data: filas.map(f => (f ? [f.mediana - grosor, f.mediana + grosor] : null)), barPercentage: 0.9, categoryPercentage: 1, grouped: false, borderSkipped: false },
+    ],
+  };
+
+  // Colores de cada estado: reposo (terracota) y color (verde y azul)
+  function aplicarModo(modo) {
+    const g = miniChartTopDeudor;
+    if (!g) return;
+    const ds = g.data.datasets;
+    const vivo = modo === "color";
+    const verde = "#22C55E", azul = "#2563EB";
+    ds[0].backgroundColor = vivo ? [verde, azul] : [COLOR_REPOSO, "#C9775B"];
+    ds[1].backgroundColor = vivo ? ["rgba(34,197,94,0.38)", "rgba(37,99,235,0.32)"] : ["rgba(169,87,63,0.20)", "rgba(201,119,91,0.18)"];
+    ds[1].borderColor = vivo ? [verde, azul] : [COLOR_REPOSO, "#C9775B"];
+    ds[2].backgroundColor = vivo ? ["#14532D", "#1E3A8A"] : ["#5A2E22", "#7A4A38"];
+  }
+
+  const opciones = {
+    ...opcionesBaseMedallon(),
+    indexAxis: "y",
+    layout: { padding: 2 },
+    scales: {
+      x: { display: false, min: 0, max: 1.04 },
+      y: { display: false },
+    },
+  };
+
+  if (miniChartTopDeudor && miniChartTopDeudor.$posicion) {
+    miniChartTopDeudor.data = datos;
+    aplicarModo(miniChartTopDeudor.$modo || "reposo");
+    miniChartTopDeudor.update();
+  } else {
+    if (miniChartTopDeudor) miniChartTopDeudor.destroy();
+    const canvas = document.getElementById("miniChartTopDeudor");
+    if (!canvas || typeof Chart === "undefined") return;
+    miniChartTopDeudor = new Chart(canvas, { type: "bar", data: datos, options: opciones });
+    miniChartTopDeudor.$estilos = {};
+    miniChartTopDeudor.$modo = "reposo";
+    miniChartTopDeudor.$posicion = true;
+    miniChartTopDeudor.$aplicarModo = aplicarModo;
+    aplicarModo("reposo");
+    miniChartTopDeudor.update("none");
+  }
+
+  // Parte de atrás (solo se ve si la ventana no pudiera abrirse)
+  const linea = (n, r) => `<p><strong>${n}</strong><br>${r ? "Q1 " + formatearMonedaCompacta(r.q1.valor) + " · Me " + formatearMonedaCompacta(r.q2.valor) + " · Q3 " + formatearMonedaCompacta(r.q3.valor) : "sin datos"}</p>`;
+  document.getElementById("cpTopDeudorBack").innerHTML = `<h4>Mi mes frente a los demás</h4>` + linea("Ingresos", rIng) + linea("Egresos", rEgr);
 }
 
-/* --- 4. TOP VENDEDOR: representante con más ventas + ranking --- */
-function actualizarCardTopRepresentante() {
-  const montoPorRepresentante = {};
-  registros.forEach(r => {
-    const nombre = (r.representante || "Sin asignar").trim();
-    montoPorRepresentante[nombre] = (montoPorRepresentante[nombre] || 0) + (Number(r.montoTotal) || 0);
-  });
-  const top = Object.entries(montoPorRepresentante).sort((a, b) => b[1] - a[1]).slice(0, 3);
-
-  document.getElementById("cpTopRepresentanteValor").textContent = top.length === 0 ? "—" : top[0][0];
-
-  const back = document.getElementById("cpTopRepresentanteBack");
-  back.innerHTML = `<h4>Top 3 vendedores</h4>` + (
-    top.length === 0
-      ? `<p>Aún no hay ventas registradas.</p>`
-      : top.map(([nombre, monto], i) => `<p><strong>${i + 1}º ${nombre}</strong><br>${formatearMoneda(monto)}</p>`).join("")
-  );
-}
-
-/* --- 5. TOP PRODUCTO: código de ladrillo más vendido + ranking --- */
-function actualizarCardTopCodigo() {
-  const unidadesPorCodigo = {};
-  registros.forEach(r => {
-    const codigo = (r.codigoLadrillo || "Sin código").trim() || "Sin código";
-    unidadesPorCodigo[codigo] = (unidadesPorCodigo[codigo] || 0) + (Number(r.unidad) || 0);
-  });
-  const top = Object.entries(unidadesPorCodigo).sort((a, b) => b[1] - a[1]).slice(0, 3);
-
-  document.getElementById("cpTopCodigoValor").textContent = top.length === 0 ? "—" : top[0][0];
-
-  const back = document.getElementById("cpTopCodigoBack");
-  back.innerHTML = `<h4>Top 3 productos</h4>` + (
-    top.length === 0
-      ? `<p>Aún no hay ventas registradas.</p>`
-      : top.map(([codigo, u], i) => `<p><strong>${i + 1}º ${codigo}</strong><br>${u} unidades</p>`).join("")
-  );
-}
-
-/* --- 6. BANCO/EFECT.: entidad principal + ranking de participación --- */
-function actualizarCardBancos() {
-  const montoPorBanco = {};
-  registros.forEach(r => {
-    const entidad = (r.entidadBancaria || "Sin especificar").trim() || "Sin especificar";
-    montoPorBanco[entidad] = (montoPorBanco[entidad] || 0) + (Number(r.montoTotal) || 0);
-  });
-  const ordenado = Object.entries(montoPorBanco).sort((a, b) => b[1] - a[1]);
-  const total = ordenado.reduce((s, [, m]) => s + m, 0);
-  const top3 = ordenado.slice(0, 3);
-
-  document.getElementById("cpBancosValor").textContent = total === 0 ? "—" : top3[0][0];
-
-  const datos = total > 0 ? ordenado.map(([, m]) => m) : [1];
-  const colores = total > 0 ? PALETA_GRAFICOS : ["#3A4A4C"];
-
-  miniChartBancos = dibujarMiniChart(miniChartBancos, "miniChartBancos", {
-    type: "pie",
-    data: { datasets: [{ data: datos, backgroundColor: colores, borderWidth: 0 }] },
-    options: { responsive: false, plugins: { legend: { display: false }, tooltip: { enabled: false } } },
-  });
-
-  const back = document.getElementById("cpBancosBack");
-  back.innerHTML = `<h4>Top 3 entidades</h4>` + (
-    total === 0
-      ? `<p>Aún no hay ventas registradas.</p>`
-      : top3.map(([nombre, monto], i) => {
-          const pct = ((monto / total) * 100).toFixed(0);
-          return `<p><strong>${i + 1}º ${nombre}</strong><br>${formatearMoneda(monto)} (${pct}%)</p>`;
-        }).join("")
-  );
-}
-
-/* --- Mecánica de clic para voltear cualquiera de las 6 tarjetas --- */
+/* --- Clic: voltea la tarjeta. Cursor o teclado: colorea y redibuja el gráfico --- */
 document.querySelectorAll(".flip-card").forEach(tarjeta => {
-  tarjeta.addEventListener("click", () => tarjeta.classList.toggle("is-flipped"));
+  tarjeta.addEventListener("click", () => {
+    // Este círculo abre la ventana "¿Mis ventas y pagos son parecidos?"
+    // (parejos.js). Si ese archivo no cargó, abre la de "Ventas por mes"
+    // (ventas-mes.js), y si tampoco, se voltea como las demás: nunca queda sin respuesta.
+    if (tarjeta.dataset.tarjeta === "ventas-mes") {
+      if (typeof abrirParejos === "function" && abrirParejos()) return;
+      if (typeof abrirVentasMes === "function" && abrirVentasMes()) return;
+    }
+    // "Estabilidad" (desviación estándar) abre su ventana (estabilidad.js)
+    if (tarjeta.dataset.tarjeta === "forma-pago" && typeof abrirEstabilidad === "function" && abrirEstabilidad()) return;
+    // "Medidas de posición" (cuartiles, quintiles y percentiles) abre su ventana (posicion.js)
+    if (tarjeta.dataset.tarjeta === "top-deudor" && typeof abrirPosicion === "function" && abrirPosicion()) return;
+    tarjeta.classList.toggle("is-flipped");
+  });
+
+  const lienzo = tarjeta.querySelector("canvas");
+  const activar = () => cambiarModoGrafico(lienzo, "color");
+  const desactivar = () => cambiarModoGrafico(lienzo, "reposo");
+  tarjeta.addEventListener("mouseenter", activar);
+  tarjeta.addEventListener("mouseleave", desactivar);
+  // Con el mouse, hacer clic también da foco: solo se colorea por foco si viene del teclado
+  tarjeta.addEventListener("focus", () => { if (tarjeta.matches(":focus-visible")) activar(); });
+  tarjeta.addEventListener("blur", desactivar);
 });
 
 
 /* =========================================================
-   INDICADORES CLAVE (ticket promedio, variación detallada,
-   racha de ventas). Se apoyan en TODOS los registros guardados.
+   INDICADORES CLAVE → ahora «Salud de tu negocio» (punto de
+   equilibrio, en qué se va la plata y clientes clave del año).
+   Los dibuja negocio.js dentro de actualizarDashboard().
    ========================================================= */
-
-// Convierte "YYYY-MM-DD" en un objeto Date a medianoche local,
-// evitando el corrimiento de un día que causa "new Date('YYYY-MM-DD')".
-function fechaLocalDesdeTexto(fechaStr) {
-  return new Date(fechaStr + "T00:00:00");
-}
-
-function diferenciaEnDias(fechaA, fechaB) {
-  const msPorDia = 1000 * 60 * 60 * 24;
-  return Math.round((fechaA.getTime() - fechaB.getTime()) / msPorDia);
-}
-
-function actualizarIndicadoresClave() {
-  actualizarKpiTicketPromedio();
-  actualizarKpiVariacionDetallada();
-  actualizarKpiRachaVentas();
-}
-
-// --- 1. Ticket promedio: ¿muchas ventas chicas o pocas ventas grandes? ---
-function actualizarKpiTicketPromedio() {
-  const cont = document.getElementById("kpiTicketPromedio");
-  const listaMes = registrosDelMes(mesActual);
-  const nMes = listaMes.length;
-  const montoMes = listaMes.reduce((s, r) => s + (Number(r.montoTotal) || 0), 0);
-  const ticketMes = nMes > 0 ? montoMes / nMes : 0;
-
-  const nHistorico = registros.length;
-  const montoHistorico = registros.reduce((s, r) => s + (Number(r.montoTotal) || 0), 0);
-  const ticketHistorico = nHistorico > 0 ? montoHistorico / nHistorico : 0;
-
-  let interpretacion = "Aún no hay suficientes ventas este mes para comparar.";
-  let claseValor = "neutral";
-  if (nMes > 0 && ticketHistorico > 0) {
-    const diferenciaPct = ((ticketMes - ticketHistorico) / ticketHistorico) * 100;
-    if (diferenciaPct >= 15) {
-      interpretacion = `📈 Estás cerrando pocas ventas grandes (ticket ${diferenciaPct.toFixed(0)}% más alto que tu promedio histórico).`;
-      claseValor = "up";
-    } else if (diferenciaPct <= -15) {
-      interpretacion = `📉 Estás cerrando muchas ventas chicas (ticket ${Math.abs(diferenciaPct).toFixed(0)}% más bajo que tu promedio histórico).`;
-      claseValor = "down";
-    } else {
-      interpretacion = "Tu tamaño de venta este mes es similar a tu promedio histórico.";
-      claseValor = "neutral";
-    }
-  }
-
-  const confiable = nMes >= 5;
-  const tagHtml = nMes === 0
-    ? ""
-    : confiable
-      ? `<span class="kpi-tag kpi-tag-ok">✓ Basado en ${nMes} venta${nMes === 1 ? "" : "s"}</span>`
-      : `<span class="kpi-tag kpi-tag-warn">⚠️ Muestra pequeña (${nMes} venta${nMes === 1 ? "" : "s"})</span>`;
-
-  cont.innerHTML = `
-    <div class="kpi-card-header">
-      <span class="kpi-icon">🎯</span>
-      <span class="kpi-card-title">Tamaño de venta</span>
-    </div>
-    <p class="kpi-value ${claseValor}">${formatearMoneda(ticketMes)}</p>
-    <p class="kpi-interpretation">${interpretacion}</p>
-    <div class="kpi-detail-list">
-      <span>Ticket promedio histórico: <strong>${formatearMoneda(ticketHistorico)}</strong></span>
-      <span>Ventas este mes: <strong>${nMes}</strong> · Total histórico: <strong>${nHistorico}</strong></span>
-    </div>
-    ${tagHtml}
-  `;
-}
-
-// --- 2. Variación % vs. mes anterior, con contexto detallado ---
-function actualizarKpiVariacionDetallada() {
-  const cont = document.getElementById("kpiVariacionDetallada");
-  const mesAnteriorIdx = (mesActual - 1 + 12) % 12;
-
-  const listaMes = registrosDelMes(mesActual);
-  const listaAnterior = registrosDelMes(mesAnteriorIdx);
-
-  const montoMes = listaMes.reduce((s, r) => s + (Number(r.montoTotal) || 0), 0);
-  const montoAnterior = listaAnterior.reduce((s, r) => s + (Number(r.montoTotal) || 0), 0);
-  const nMes = listaMes.length;
-  const nAnterior = listaAnterior.length;
-
-  let valorHtml = "—";
-  let interpretacion = `Aún no hay registros en ${MESES[mesAnteriorIdx].toLowerCase()} para comparar.`;
-  let claseValor = "neutral";
-  let tagHtml = "";
-
-  if (montoAnterior > 0) {
-    const variacionMonto = ((montoMes - montoAnterior) / montoAnterior) * 100;
-    const subio = variacionMonto >= 0;
-    claseValor = subio ? "up" : "down";
-    valorHtml = `${subio ? "▲" : "▼"} ${Math.abs(variacionMonto).toFixed(1)}%`;
-    interpretacion = subio
-      ? `Vendiste más que en ${MESES[mesAnteriorIdx].toLowerCase()}.`
-      : `Vendiste menos que en ${MESES[mesAnteriorIdx].toLowerCase()}.`;
-
-    const confiable = nAnterior >= 3 && nMes >= 3;
-    tagHtml = confiable
-      ? `<span class="kpi-tag kpi-tag-ok">✓ Comparación confiable</span>`
-      : `<span class="kpi-tag kpi-tag-warn">⚠️ Pocos registros para comparar bien</span>`;
-  }
-
-  cont.innerHTML = `
-    <div class="kpi-card-header">
-      <span class="kpi-icon">📊</span>
-      <span class="kpi-card-title">Variación vs. mes anterior</span>
-    </div>
-    <p class="kpi-value ${claseValor}">${valorHtml}</p>
-    <p class="kpi-interpretation">${interpretacion}</p>
-    <div class="kpi-detail-list">
-      <span>${MESES[mesActual]}: <strong>${formatearMoneda(montoMes)}</strong> (${nMes} venta${nMes === 1 ? "" : "s"})</span>
-      <span>${MESES[mesAnteriorIdx]}: <strong>${formatearMoneda(montoAnterior)}</strong> (${nAnterior} venta${nAnterior === 1 ? "" : "s"})</span>
-    </div>
-    ${tagHtml}
-  `;
-}
-
-// --- 3. Racha de ventas: días consecutivos con al menos una venta ---
-function actualizarKpiRachaVentas() {
-  const cont = document.getElementById("kpiRachaVentas");
-
-  const fechasUnicas = Array.from(new Set(registros.map(r => r.fechaIngreso).filter(Boolean)))
-    .map(fechaLocalDesdeTexto)
-    .sort((a, b) => a - b);
-
-  if (fechasUnicas.length === 0) {
-    cont.innerHTML = `
-      <div class="kpi-card-header">
-        <span class="kpi-icon">🔥</span>
-        <span class="kpi-card-title">Racha de ventas</span>
-      </div>
-      <p class="kpi-value neutral">—</p>
-      <p class="kpi-interpretation">Aún no hay registros para calcular una racha.</p>
-    `;
-    return;
-  }
-
-  // Racha más larga registrada en todo el historial
-  let rachaMaxima = 1, rachaActualCalculo = 1;
-  for (let i = 1; i < fechasUnicas.length; i++) {
-    if (diferenciaEnDias(fechasUnicas[i], fechasUnicas[i - 1]) === 1) {
-      rachaActualCalculo++;
-      rachaMaxima = Math.max(rachaMaxima, rachaActualCalculo);
-    } else {
-      rachaActualCalculo = 1;
-    }
-  }
-
-  // Racha vigente: consecutiva terminando en la última fecha con ventas
-  const ultimaFecha = fechasUnicas[fechasUnicas.length - 1];
-  let rachaActual = 1;
-  for (let i = fechasUnicas.length - 1; i > 0; i--) {
-    if (diferenciaEnDias(fechasUnicas[i], fechasUnicas[i - 1]) === 1) {
-      rachaActual++;
-    } else {
-      break;
-    }
-  }
-
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  const diasSinVentas = diferenciaEnDias(hoy, ultimaFecha);
-
-  let interpretacion, claseValor, tagHtml;
-  if (diasSinVentas <= 0) {
-    interpretacion = `🔥 Racha activa: ${rachaActual} día${rachaActual === 1 ? "" : "s"} seguido${rachaActual === 1 ? "" : "s"} con ventas, incluyendo hoy.`;
-    claseValor = "up";
-    tagHtml = `<span class="kpi-tag kpi-tag-ok">✓ Racha vigente</span>`;
-  } else {
-    interpretacion = `Sin ventas registradas en los últimos ${diasSinVentas} día${diasSinVentas === 1 ? "" : "s"}. La última racha activa duró ${rachaActual} día${rachaActual === 1 ? "" : "s"}.`;
-    claseValor = diasSinVentas >= 5 ? "down" : "neutral";
-    tagHtml = `<span class="kpi-tag kpi-tag-warn">⚠️ Racha interrumpida</span>`;
-  }
-
-  cont.innerHTML = `
-    <div class="kpi-card-header">
-      <span class="kpi-icon">🔥</span>
-      <span class="kpi-card-title">Racha de ventas</span>
-    </div>
-    <p class="kpi-value ${claseValor}">${diasSinVentas <= 0 ? rachaActual : 0} día${(diasSinVentas <= 0 ? rachaActual : 0) === 1 ? "" : "s"}</p>
-    <p class="kpi-interpretation">${interpretacion}</p>
-    <div class="kpi-detail-list">
-      <span>Récord histórico: <strong>${rachaMaxima} día${rachaMaxima === 1 ? "" : "s"}</strong> seguidos</span>
-      <span>Última venta registrada: <strong>${formatearFecha(ultimaFecha.toISOString().slice(0, 10))}</strong></span>
-    </div>
-    ${tagHtml}
-  `;
-}
 
 /* =========================================================
    MODAL: NUEVO / EDITAR REGISTRO
@@ -1136,9 +1339,15 @@ formRegistro.addEventListener("submit", function (e) {
 
   cerrarModalRegistro();
   renderTodo();
+  // Si el Excel automático de ingresos no está activo, se avisa (el registro igual queda guardado en el sistema)
+  if (!handleExcelAutomatico && window.AvisoExcel) AvisoExcel.inactivo("ingresos");
 });
 
-document.getElementById("btnNuevo").addEventListener("click", abrirModalNuevo);
+// El mismo botón del menú abre el formulario de ingreso o el de egreso, según lo que se esté viendo
+document.getElementById("btnNuevo").addEventListener("click", function () {
+  if (modoRegistro === "egresos" && typeof abrirModalEgresoNuevo === "function") abrirModalEgresoNuevo();
+  else abrirModalNuevo();
+});
 document.getElementById("cancelarRegistro").addEventListener("click", cerrarModalRegistro);
 document.getElementById("cerrarModalRegistro").addEventListener("click", cerrarModalRegistro);
 modalRegistro.addEventListener("click", (e) => { if (e.target === modalRegistro) cerrarModalRegistro(); });
@@ -1175,14 +1384,31 @@ document.getElementById("btnBorrarTodo").addEventListener("click", function () {
 document.getElementById("btnCancelarBorrarTodo").addEventListener("click", cerrarModalBorrarTodo);
 
 document.getElementById("btnConfirmarBorrarTodo").addEventListener("click", function () {
-  const cantidadBorrada = registros.length;
-  registros = [];
-  guardarRegistros();
+  // Qué se borra: ingresos, egresos o todo (se elige en la misma ventana)
+  const elegido = document.querySelector('input[name="alcanceBorrado"]:checked');
+  const alcance = elegido ? elegido.value : "todo";
+  let cantidadIngresos = 0;
+  let cantidadEgresos = 0;
+
+  if (alcance !== "egresos") {
+    cantidadIngresos = registros.length;
+    registros = [];
+    guardarRegistros();
+  }
+  if (alcance !== "ingresos" && typeof borrarTodosLosEgresos === "function") {
+    cantidadEgresos = borrarTodosLosEgresos();
+  }
+
   renderTodo();
   actualizarListasAutocompletado();
   cerrarModalBorrarTodo();
-  mostrarToast("Todos los datos fueron borrados.", "success");
-  registrarEnHistorial("Borró TODOS los datos", `${cantidadBorrada} registro(s) eliminados`);
+
+  const textos = { todo: "Se borraron los ingresos y los egresos.", ingresos: "Se borraron todos los ingresos.", egresos: "Se borraron todos los egresos." };
+  mostrarToast(textos[alcance] || textos.todo, "success");
+  const detalle = [];
+  if (alcance !== "egresos") detalle.push(`${cantidadIngresos} ingreso(s)`);
+  if (alcance !== "ingresos") detalle.push(`${cantidadEgresos} egreso(s)`);
+  registrarEnHistorial(alcance === "todo" ? "Borró TODOS los datos" : `Borró todos los ${alcance}`, detalle.join(" y ") + " eliminados");
 });
 
 /* =========================================================
@@ -1208,7 +1434,7 @@ function mostrarToast(mensaje, tipo = "info") {
 function construirHojaExcel(lista) {
   const encabezados = COLUMNAS.map(c => c.label);
   const filas = lista.map(r => COLUMNAS.map(c => {
-    if (c.tipo === "fecha") return r[c.key] ? new Date(r[c.key] + "T00:00:00") : "";
+    if (c.tipo === "fecha") return r[c.key] ? fechaExcel(r[c.key]) : "";
     if (c.tipo === "moneda" || c.tipo === "numero") return Number(r[c.key]) || 0;
     return r[c.key] || "";
   }));
@@ -1269,6 +1495,7 @@ function construirHojaExcel(lista) {
 // Ahora, si el navegador lo permite, pregunta primero en qué carpeta
 // guardar (el mismo cuadro de "Guardar como" de Windows/Mac).
 async function descargarLibro(wb, nombreArchivoSugerido) {
+  abrirEnUltimaHojaConDatos(wb);
   const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array", cellStyles: true });
 
   if ("showSaveFilePicker" in window) {
@@ -1357,13 +1584,61 @@ function normalizarEncabezado(txt) {
 // Convierte las filas crudas del Excel (array de objetos con claves = encabezados)
 // en registros con las claves internas del sistema, respetando el orden de columnas
 // declarado. Si los encabezados no coinciden con los esperados, cae a posición.
-function mapearFilasImportadas(filasCrudas, encabezadosOriginales) {
-  const mapaEncabezados = {};
-  encabezadosOriginales.forEach((h, i) => {
-    mapaEncabezados[normalizarEncabezado(h)] = i;
-  });
+// Encabezados sin tildes ni mayúsculas, para comparar "Código de ladrillo"
+// con "Codigo de ladrillos" o "Adelanto ó al contado" con "Adelanto o al contado"
+function encabezadoSinTildes(txt) {
+  return String(txt ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+}
 
-  const usarPosicion = COLUMNAS.every(c => mapaEncabezados[normalizarEncabezado(c.label)] === undefined);
+// Otros nombres con que aparece cada columna en el Excel real de la empresa
+const ALIAS_COLUMNAS = {
+  fechaIngreso: ["fecha de ingreso"],
+  fechaFacturacion: ["fecha de facturacion"],
+  representante: ["representante"],
+  cliente: ["cliente o razon social", "cliente"],
+  entidadBancaria: ["entidad bancaria"],
+  numeroOperacion: ["numero de operacion", "n° de operacion", "nro de operacion"],
+  rucDni: ["ruc/dni", "ruc / dni", "ruc"],
+  numeroFactura: ["numero de factura", "n° de factura", "nro de factura"],
+  adelantoContado: ["adelanto"],
+  unidad: ["unidad"],
+  precioUnitario: ["precio unitario"],
+  montoTotal: ["monto total"],
+  codigoLadrillo: ["codigo de ladrillo"],
+  deudaPendiente: ["deuda pendiente"],
+  observaciones: ["observacion"],
+};
+
+// Posición de una columna: primero el nombre exacto y luego "empieza con"
+function indiceDeColumna(encabezadosNorm, columna) {
+  const candidatos = [encabezadoSinTildes(columna.label)].concat(ALIAS_COLUMNAS[columna.key] || []);
+  for (const c of candidatos) {
+    const i = encabezadosNorm.indexOf(c);
+    if (i > -1) return i;
+  }
+  for (const c of candidatos) {
+    const i = encabezadosNorm.findIndex(h => h && h.startsWith(c));
+    if (i > -1) return i;
+  }
+  return -1;
+}
+
+// En el Excel real, cada hoja tiene filas de título arriba y el encabezado
+// en una fila distinta (3, 4 o 5). Se busca la fila que dice "Fecha de ingreso";
+// si no aparece (por ejemplo, un Excel exportado por esta app), se usa la primera.
+function filaDeEncabezadoIngresos(filas) {
+  const limite = Math.min(filas.length, 40);
+  for (let r = 0; r < limite; r++) {
+    if ((filas[r] || []).some(c => encabezadoSinTildes(c).startsWith("fecha de ingreso"))) return r;
+  }
+  return 0;
+}
+
+function mapearFilasImportadas(filasCrudas, encabezadosOriginales) {
+  const encabezadosNorm = encabezadosOriginales.map(encabezadoSinTildes);
+  const posiciones = COLUMNAS.map(c => indiceDeColumna(encabezadosNorm, c));
+
+  const usarPosicion = posiciones.every(p => p === -1);
 
   return filasCrudas.map(filaArray => {
     const registro = { id: generarId() };
@@ -1372,20 +1647,28 @@ function mapearFilasImportadas(filasCrudas, encabezadosOriginales) {
       if (usarPosicion) {
         valorCrudo = filaArray[idx];
       } else {
-        const posEncabezado = mapaEncabezados[normalizarEncabezado(c.label)];
-        valorCrudo = posEncabezado !== undefined ? filaArray[posEncabezado] : "";
+        const posEncabezado = posiciones[idx];
+        valorCrudo = posEncabezado > -1 ? filaArray[posEncabezado] : "";
       }
 
       if (c.tipo === "fecha") {
         registro[c.key] = convertirValorFecha(valorCrudo);
       } else if (c.tipo === "moneda" || c.tipo === "numero") {
-        registro[c.key] = parseFloat(valorCrudo) || 0;
+        // Sirve para números y para textos como «S/ 1,200.00», «1,000» o «$ 950» (siempre en soles)
+        const n = typeof numeroDesdeCelda === "function" ? numeroDesdeCelda(valorCrudo) : parseFloat(valorCrudo);
+        registro[c.key] = isFinite(n) ? n : 0;
       } else {
         registro[c.key] = valorCrudo != null ? String(valorCrudo).trim() : "";
       }
     });
     return registro;
   }).filter(r => r.fechaIngreso || r.cliente); // descarta filas totalmente vacías
+}
+
+// Deja en pantalla el mes más reciente de una lista de fechas (el último mes que trae un Excel importado)
+function irAlUltimoMesDe(fechas) {
+  const ultima = (fechas || []).filter(f => /^\d{4}-\d{2}-\d{2}/.test(f || "")).sort().pop();
+  if (ultima) mesActual = mesDeFecha(ultima);
 }
 
 function convertirValorFecha(valor) {
@@ -1398,7 +1681,7 @@ function convertirValorFecha(valor) {
   }
   // Texto tipo dd/mm/yyyy
   const txt = String(valor).trim();
-  const conBarras = txt.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  const conBarras = txt.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
   if (conBarras) {
     return `${conBarras[3]}-${conBarras[2].padStart(2, "0")}-${conBarras[1].padStart(2, "0")}`;
   }
@@ -1417,6 +1700,13 @@ document.getElementById("inputImportarExcel").addEventListener("change", functio
     try {
       const wb = XLSX.read(evt.target.result, { type: "array", cellDates: false });
 
+      // Si el archivo es de egresos (tiene "Fecha de egreso" y no "Fecha de ingreso"),
+      // se avisa en vez de meter pagos como si fueran ventas
+      if (typeof libroPareceDeEgresos === "function" && libroPareceDeEgresos(wb)) {
+        mostrarToast("Este Excel parece ser de egresos. Usa «Importar Excel de egresos».", "error");
+        return;
+      }
+
       // Lee TODAS las hojas del archivo (por ejemplo, las 12 hojas de un
       // Excel exportado con "Exportar todo el año") y junta los registros
       // de todas ellas, no solo de la primera.
@@ -1428,8 +1718,9 @@ document.getElementById("inputImportarExcel").addEventListener("change", functio
         const filas = XLSX.utils.sheet_to_json(hoja, { header: 1, raw: true, defval: "" });
         if (filas.length < 2) return; // hoja vacía (solo encabezado o nada), se salta
 
-        const encabezados = filas[0];
-        const filasDatos = filas.slice(1);
+        const filaEncabezado = filaDeEncabezadoIngresos(filas);
+        const encabezados = filas[filaEncabezado];
+        const filasDatos = filas.slice(filaEncabezado + 1);
         const nuevos = mapearFilasImportadas(filasDatos, encabezados);
         if (nuevos.length > 0) {
           registrosCombinados = registrosCombinados.concat(nuevos);
@@ -1443,8 +1734,14 @@ document.getElementById("inputImportarExcel").addEventListener("change", functio
       }
 
       datosImportadosPendientes = registrosCombinados;
+      tipoImportacionPendiente = "ingresos";
+      document.getElementById("tituloImportar").textContent = "Importar ingresos";
+      // ¿Cuántos ya estaban cargados? (volver a importar el mismo Excel no debe duplicar nada)
+      const yaCargados = window.Duplicados ? Duplicados.separarNuevos(registrosCombinados, registros, Duplicados.firmaIngreso).repetidos.length : 0;
       document.getElementById("textoImportarResumen").textContent =
-        `Se encontraron ${registrosCombinados.length} registro(s) en ${hojasConDatos} hoja(s) del archivo. ¿Deseas agregar estos registros a los datos existentes?`;
+        `Se encontraron ${registrosCombinados.length} registro(s) en ${hojasConDatos} hoja(s) del archivo.` +
+        (yaCargados ? ` ${yaCargados === registrosCombinados.length ? "Todos" : yaCargados} ya están cargados y no se volverán a sumar; «Agregar datos» solo agrega los ${registrosCombinados.length - yaCargados} nuevo(s).` : "") +
+        " ¿Deseas agregar estos registros a los datos existentes?";
       abrirModal(document.getElementById("modalImportar"));
     } catch (err) {
       console.error(err);
@@ -1458,17 +1755,34 @@ document.getElementById("inputImportarExcel").addEventListener("change", functio
 
 document.getElementById("btnAgregarDatos").addEventListener("click", function () {
   if (!datosImportadosPendientes) return;
-  const cantidad = datosImportadosPendientes.length;
-  registros = registros.concat(datosImportadosPendientes);
+  if (tipoImportacionPendiente === "egresos" && typeof aplicarImportacionEgresos === "function") {
+    aplicarImportacionEgresos(datosImportadosPendientes, "agregar");
+    cerrarModalImportar();
+    return;
+  }
+  // Solo se agrega lo que todavía no está cargado: así el mismo Excel nunca se suma dos veces
+  const separados = window.Duplicados
+    ? Duplicados.separarNuevos(datosImportadosPendientes, registros, Duplicados.firmaIngreso)
+    : { nuevos: datosImportadosPendientes, repetidos: [] };
+  const cantidad = separados.nuevos.length;
+  registros = registros.concat(separados.nuevos);
   guardarRegistros();
+  irAlUltimoMesDe(datosImportadosPendientes.map(r => r.fechaIngreso));
+  cambiarModoRegistro("ingresos", false);
   cerrarModalImportar();
   renderTodo();
-  mostrarToast("✅ Datos exportados correctamente a Excel".replace("exportados", "importados"), "success");
-  registrarEnHistorial("Importó Excel (agregó)", `${cantidad} registro(s)`);
+  if (!cantidad) mostrarToast("Este Excel ya estaba cargado: no se agregó nada para no duplicar tus datos.", "info");
+  else mostrarToast(`✅ ${cantidad} registro(s) importados correctamente.` + (separados.repetidos.length ? ` Se omitieron ${separados.repetidos.length} que ya estaban cargados.` : ""), "success");
+  registrarEnHistorial("Importó Excel (agregó)", `${cantidad} registro(s)` + (separados.repetidos.length ? `, ${separados.repetidos.length} omitido(s) por estar ya cargados` : ""));
 });
 
 document.getElementById("btnReemplazarDatos").addEventListener("click", function () {
   if (!datosImportadosPendientes) return;
+  if (tipoImportacionPendiente === "egresos" && typeof aplicarImportacionEgresos === "function") {
+    aplicarImportacionEgresos(datosImportadosPendientes, "reemplazar");
+    cerrarModalImportar();
+    return;
+  }
 
   // Reemplaza los datos de TODOS los meses que vienen en el archivo
   // importado (puede ser uno solo, o los 12 si importaste el Excel anual),
@@ -1480,6 +1794,8 @@ document.getElementById("btnReemplazarDatos").addEventListener("click", function
   registros = registros.concat(datosImportadosPendientes);
 
   guardarRegistros();
+  irAlUltimoMesDe(datosImportadosPendientes.map(r => r.fechaIngreso));
+  cambiarModoRegistro("ingresos", false);
   cerrarModalImportar();
   renderTodo();
 
@@ -1493,6 +1809,7 @@ document.getElementById("btnCancelarImportar").addEventListener("click", cerrarM
 function cerrarModalImportar() {
   document.getElementById("modalImportar").hidden = true;
   datosImportadosPendientes = null;
+  tipoImportacionPendiente = "ingresos";
 }
 
 /* =========================================================
@@ -1504,7 +1821,9 @@ let archivoRespaldoSeleccionado = null;
 
 // --- Crear copia de seguridad ---
 document.getElementById("btnCrearRespaldo").addEventListener("click", function () {
-  const contenido = JSON.stringify({ version: 1, exportadoEn: new Date().toISOString(), registros }, null, 2);
+  // Versión 2: además de los ingresos ("registros"), guarda los egresos
+  const listaEgresos = typeof egresos !== "undefined" ? egresos : [];
+  const contenido = JSON.stringify({ version: 2, exportadoEn: new Date().toISOString(), registros, egresos: listaEgresos }, null, 2);
   const blob = new Blob([contenido], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -1549,15 +1868,21 @@ document.getElementById("btnRestaurarRespaldo").addEventListener("click", functi
       const listaRestaurada = Array.isArray(data) ? data : data.registros;
       if (!Array.isArray(listaRestaurada)) throw new Error("Formato inválido");
 
-      const ok = confirm(`Se restaurarán ${listaRestaurada.length} registro(s) desde el respaldo. Esto reemplazará TODOS los datos actuales. ¿Continuar?`);
+      // Las copias nuevas traen también los egresos; las antiguas (solo ingresos) no los tocan
+      const egresosRestaurados = !Array.isArray(data) && Array.isArray(data.egresos) ? data.egresos : null;
+      const mensaje = egresosRestaurados
+        ? `Se restaurarán ${listaRestaurada.length} ingreso(s) y ${egresosRestaurados.length} egreso(s) desde el respaldo. Esto reemplazará TODOS los datos actuales. ¿Continuar?`
+        : `Se restaurarán ${listaRestaurada.length} ingreso(s) desde el respaldo. Esto reemplazará TODOS los ingresos actuales (esta copia no trae egresos: los egresos actuales se conservan). ¿Continuar?`;
+      const ok = confirm(mensaje);
       if (!ok) return;
 
       registros = listaRestaurada;
       guardarRegistros();
+      if (egresosRestaurados && typeof restaurarEgresos === "function") restaurarEgresos(egresosRestaurados);
       renderTodo();
       actualizarListasAutocompletado();
       mostrarToast("Copia de seguridad restaurada correctamente.", "success");
-      registrarEnHistorial("Restauró copia de seguridad", `${listaRestaurada.length} registro(s)`);
+      registrarEnHistorial("Restauró copia de seguridad", `${listaRestaurada.length} ingreso(s)` + (egresosRestaurados ? ` y ${egresosRestaurados.length} egreso(s)` : ""));
 
       // Limpiar la selección para evitar restaurar el mismo archivo dos veces por error.
       archivoRespaldoSeleccionado = null;
@@ -1608,6 +1933,7 @@ DEFINICIONES_DROPDOWN.forEach(({ contenedorId, botonId, menuId }) => {
   menu.addEventListener("click", (e) => {
     if (e.target.closest("#btnRestaurarRespaldo, #inputRestaurarRespaldo, label[for='inputRestaurarRespaldo']")) return;
     if (e.target.closest("label[for='inputImportarExcel'], #inputImportarExcel")) return;
+    if (e.target.closest("label[for='inputImportarEgresos'], #inputImportarEgresos")) return;
     if (e.target.closest(".dropdown-item, #btnCrearRespaldo")) cerrarTodosLosDropdowns();
   });
 });
